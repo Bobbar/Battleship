@@ -223,5 +223,16 @@ namespace Battleship
 
         }
 
+        public bool IsDefeated()
+        {
+            foreach(var ship in _ships)
+            {
+                if (ship.IsSunk == false)
+                    return false;
+            }
+
+            return true;
+        }
+
     }
 }

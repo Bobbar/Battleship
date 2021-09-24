@@ -143,12 +143,14 @@ namespace Battleship
         private void shotsBox_MouseClick(object sender, MouseEventArgs e)
         {
             _playerBoard.TakeShot(e.Location, _computerBoard);
+            Debug.WriteLine($"Comp defeated: {_computerBoard.IsDefeated()}");
             RefreshPlayerBoards();
         }
 
         private void shotsBox2_MouseClick(object sender, MouseEventArgs e)
         {
             _computerBoard.TakeShot(e.Location, _playerBoard);
+            Debug.WriteLine($"Player defeated: {_playerBoard.IsDefeated()}");
             RefreshPlayerBoards();
         }
 
