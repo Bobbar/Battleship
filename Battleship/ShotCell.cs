@@ -28,6 +28,11 @@ namespace Battleship
         //public string Row { get; set; }
         //public Point[] CellBox { get; set; }
 
+        public ShotCell()
+        {
+
+        }
+
         public ShotCell(Point[] cellBox)
         {
             CellBox = cellBox;

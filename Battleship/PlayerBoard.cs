@@ -223,6 +223,27 @@ namespace Battleship
 
         }
 
+        public void TakeShot(ShotCell shotCell, PlayerBoard otherBoard)
+        {
+            //var shotCell = Helpers.CellFromPosition(ShotCells, location) as ShotCell;
+            //if (shotCell == null)
+            //    return;
+
+            var shipCell = Helpers.CellFromCoords(otherBoard.ShipCells, shotCell.Row, shotCell.Column) as ShipCell;
+
+            if (shipCell.HasShip)
+            {
+                shipCell.SetHit();
+                shotCell.SetHit();
+            }
+            else
+            {
+                shipCell.SetMiss();
+                shotCell.SetMiss();
+            }
+
+        }
+
         public bool IsDefeated()
         {
             foreach(var ship in _ships)

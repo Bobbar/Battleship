@@ -27,6 +27,8 @@ namespace Battleship
         private PlayerBoard _playerBoard;
         private PlayerBoard _computerBoard;
 
+        private ComputerAI _compAI;
+
         public Form1()
         {
             InitializeComponent();
@@ -43,6 +45,8 @@ namespace Battleship
         {
             _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
             _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
+
+            _compAI = new ComputerAI(_computerBoard, _playerBoard);
         }
 
         private Ship[] GetShips()
@@ -117,6 +121,11 @@ namespace Battleship
             shipsBox.Invalidate();
             shotsBox2.Invalidate();
             shipsBox2.Invalidate();
+
+            shotsBox.Refresh();
+            shipsBox.Refresh();
+            shotsBox2.Refresh();
+            shipsBox2.Refresh();
         }
 
         private void shotsBox_Paint(object sender, PaintEventArgs e)
@@ -144,6 +153,10 @@ namespace Battleship
         {
             _playerBoard.TakeShot(e.Location, _computerBoard);
             Debug.WriteLine($"Comp defeated: {_computerBoard.IsDefeated()}");
+            RefreshPlayerBoards();
+
+            Task.Delay(2000).Wait();
+            _compAI.TakeShot();
             RefreshPlayerBoards();
         }
 
