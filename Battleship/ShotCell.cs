@@ -39,6 +39,18 @@ namespace Battleship
             Row = row;
             Column = col;
         }
+
+        public void SetHit()
+        {
+            HasShot = true;
+            IsHit = true;
+        }
+
+        public void SetMiss()
+        {
+            HasShot = true;
+            IsHit = false;
+        }
     }
 
     public class ShipCell : ShotCell

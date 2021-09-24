@@ -31,8 +31,12 @@ namespace Battleship
         {
             this.shotsBox = new System.Windows.Forms.PictureBox();
             this.shipsBox = new System.Windows.Forms.PictureBox();
+            this.shotsBox2 = new System.Windows.Forms.PictureBox();
+            this.shipsBox2 = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.shotsBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.shipsBox)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.shotsBox2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.shipsBox2)).BeginInit();
             this.SuspendLayout();
             // 
             // shotsBox
@@ -49,7 +53,7 @@ namespace Battleship
             // shipsBox
             // 
             this.shipsBox.BackColor = System.Drawing.Color.Gray;
-            this.shipsBox.Location = new System.Drawing.Point(610, 53);
+            this.shipsBox.Location = new System.Drawing.Point(66, 459);
             this.shipsBox.Name = "shipsBox";
             this.shipsBox.Size = new System.Drawing.Size(400, 400);
             this.shipsBox.TabIndex = 1;
@@ -58,17 +62,44 @@ namespace Battleship
             this.shipsBox.MouseClick += new System.Windows.Forms.MouseEventHandler(this.shipsBox_MouseClick);
             this.shipsBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.shipsBox_MouseMove);
             // 
+            // shotsBox2
+            // 
+            this.shotsBox2.BackColor = System.Drawing.Color.Silver;
+            this.shotsBox2.Location = new System.Drawing.Point(648, 53);
+            this.shotsBox2.Name = "shotsBox2";
+            this.shotsBox2.Size = new System.Drawing.Size(400, 400);
+            this.shotsBox2.TabIndex = 2;
+            this.shotsBox2.TabStop = false;
+            this.shotsBox2.Paint += new System.Windows.Forms.PaintEventHandler(this.shotsBox2_Paint);
+            this.shotsBox2.MouseClick += new System.Windows.Forms.MouseEventHandler(this.shotsBox2_MouseClick);
+            // 
+            // shipsBox2
+            // 
+            this.shipsBox2.BackColor = System.Drawing.Color.Gray;
+            this.shipsBox2.Location = new System.Drawing.Point(648, 459);
+            this.shipsBox2.Name = "shipsBox2";
+            this.shipsBox2.Size = new System.Drawing.Size(400, 400);
+            this.shipsBox2.TabIndex = 3;
+            this.shipsBox2.TabStop = false;
+            this.shipsBox2.Paint += new System.Windows.Forms.PaintEventHandler(this.shipsBox2_Paint);
+            this.shipsBox2.MouseClick += new System.Windows.Forms.MouseEventHandler(this.shipsBox2_MouseClick);
+            this.shipsBox2.MouseMove += new System.Windows.Forms.MouseEventHandler(this.shipsBox2_MouseMove);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1143, 588);
+            this.ClientSize = new System.Drawing.Size(1143, 917);
+            this.Controls.Add(this.shipsBox2);
+            this.Controls.Add(this.shotsBox2);
             this.Controls.Add(this.shipsBox);
             this.Controls.Add(this.shotsBox);
             this.Name = "Form1";
             this.Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)(this.shotsBox)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.shipsBox)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.shotsBox2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.shipsBox2)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -77,6 +108,8 @@ namespace Battleship
 
         private System.Windows.Forms.PictureBox shotsBox;
         private System.Windows.Forms.PictureBox shipsBox;
+        private System.Windows.Forms.PictureBox shotsBox2;
+        private System.Windows.Forms.PictureBox shipsBox2;
     }
 }
 

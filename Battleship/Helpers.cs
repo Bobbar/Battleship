@@ -37,5 +37,27 @@ namespace Battleship
 
             return c;
         }
+
+        public static Cell CellFromCoords(Cell[] cells, int row, int column)
+        {
+            int idx = column * 10 + row;
+
+            if (idx >= cells.Length || idx < 0)
+                return null;
+
+            return cells[idx];
+        }
+
+        public static Cell CellFromPosition(Cell[] cells, Point pos)
+        {
+            for (int i = 0; i < cells.Length; i++)
+            {
+                if (Helpers.PointIsInsidePolygon(cells[i].CellBox, pos))
+                    return cells[i];
+            }
+
+            return null;
+        }
+
     }
 }
