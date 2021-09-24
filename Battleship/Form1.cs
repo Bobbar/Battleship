@@ -23,6 +23,7 @@ namespace Battleship
         private SolidBrush _hitBrush = new SolidBrush(Color.Red);
         private SolidBrush _missBrush = new SolidBrush(Color.White);
         private SolidBrush _shipBrush = new SolidBrush(Color.Blue);
+        private SolidBrush _invalidShipBrush = new SolidBrush(Color.Yellow);
 
         private int _sideLen = 40;
         private ShotCell[] _shotCells;
@@ -60,8 +61,8 @@ namespace Battleship
             //_shotsImage = new Bitmap(shotsBox.Width, shotsBox.Height);
             //_shotsImage = new Bitmap(shotsBox.Width, shotsBox.Height);
             InitGfx();
-            InitBoard();
             InitShips();
+            InitBoard();
 
             shotsBox.Invalidate();
         }
@@ -164,6 +165,17 @@ namespace Battleship
             foreach (var cell in _shipCells)
             {
                 //_shotsGfx.DrawPolygon(_cellPen, cell.CellBox);
+
+
+                if (cell.HasShip)
+                    gfx.FillPolygon(_shipBrush, cell.CellBox);
+
+                if (cell.PlacingShip && _placingShip)
+                    gfx.FillPolygon(_shipBrush, cell.CellBox);
+
+                if (cell.Ship != null && !cell.Ship.ValidPlacement())
+                    gfx.FillPolygon(_invalidShipBrush, cell.CellBox);
+
                 if (cell.HasShot)
                 {
                     if (cell.IsHit)
@@ -171,12 +183,6 @@ namespace Battleship
                     else
                         gfx.FillPolygon(_missBrush, cell.CellBox);
                 }
-
-                if (cell.HasShip)
-                    gfx.FillPolygon(_shipBrush, cell.CellBox);
-
-                if (cell.PlacingShip && _placingShip)
-                    gfx.FillPolygon(_shipBrush, cell.CellBox);
 
                 gfx.DrawPolygon(_cellPen, cell.CellBox);
             }
@@ -187,17 +193,26 @@ namespace Battleship
             if (!_placingShip || ship == null)
                 return;
 
-            ClearPlacedShips();
+            //ClearPlacedShips();
+            ClearPlacedShip(ship);
 
             var overCell = CellFromPosition(_shipCells, location) as ShipCell;
             if (overCell == null)
                 return;
 
-            //overCell.Ship = ship;
-            overCell.PlacingShip = true;
+            if (overCell.Ship == null || overCell.Ship.Name == ship.Name)
+            {
+                overCell.Ship = ship;
+                overCell.PlacingShip = true;
+
+            }
 
             int overCol = overCell.Column;
             int overRow = overCell.Row;
+            ship.Cells[0] = overCell;
+            //Debug.WriteLine($"Loc: {location}  Col: {overCol}  Row: {overRow}");
+            //Debug.WriteLine($"Loc: {location} Cell[0]: {overCell}");
+            //Debug.WriteLine($"Pos Loc: {location} Cell[0]: {ship.Cells[0]}");
 
             for (int i = 0; i < ship.Length - 1; i++)
             {
@@ -217,15 +232,27 @@ namespace Battleship
                         break;
                 }
 
-                var nextCell = CellFromCoords(_shipCells, overRow, overCol) as ShipCell;
+                //Debug.WriteLine($"Loc: {location}  Col: {overCol}  Row: {overRow}");
 
+                var nextCell = CellFromCoords(_shipCells, overRow, overCol) as ShipCell;
                 if (nextCell != null)
                 {
-                    //nextCell.Ship = ship;
-                    nextCell.PlacingShip = true;
-
+                    if (nextCell.Ship == null || nextCell.Ship.Name == ship.Name)
+                    {
+                        nextCell.Ship = ship;
+                        nextCell.PlacingShip = true;
+                    }
                 }
+
+                ship.Cells[i + 1] = nextCell;
+
+                //Debug.WriteLine($"Loc: {location} Cell[{i + 1}]: {nextCell}");
+                //Debug.WriteLine($"Pos Loc: {location} Cell[{i + 1}]: {ship.Cells[i + 1]}");
+
             }
+
+
+
 
             shipsBox.Invalidate();
             // TODO: How to unset ships cells as a ship is being positioned?
@@ -233,39 +260,52 @@ namespace Battleship
 
         private void PlaceShip(Ship ship, Point location)
         {
-            var overCell = CellFromPosition(_shipCells, location) as ShipCell;
-            if (overCell == null)
+            if (ship == null)
                 return;
 
-            overCell.Ship = ship;
+            Debug.WriteLine($"Place ship: {ship.Name}");
 
-            int overCol = overCell.Column;
-            int overRow = overCell.Row;
+            if (!ship.ValidPlacement())
+                return;
 
-            for (int i = 0; i < ship.Length - 1; i++)
-            {
-                switch (ship.Direction)
-                {
-                    case Direction.Down:
-                        overRow++;
-                        break;
-                    case Direction.Up:
-                        overRow--;
-                        break;
-                    case Direction.Left:
-                        overCol--;
-                        break;
-                    case Direction.Right:
-                        overCol++;
-                        break;
-                }
+            for (int i = 0; i < ship.Cells.Length; i++)
+                ship.Cells[i].PlacingShip = false;
 
-                var nextCell = CellFromCoords(_shipCells, overRow, overCol) as ShipCell;
-                if (nextCell != null)
-                {
-                    nextCell.Ship = ship;
-                }
-            }
+            //var overCell = CellFromPosition(_shipCells, location) as ShipCell;
+            //if (overCell == null)
+            //    return;
+
+            //overCell.Ship = ship;
+            //overCell.PlacingShip = false;
+
+            //int overCol = overCell.Column;
+            //int overRow = overCell.Row;
+
+            //for (int i = 0; i < ship.Length - 1; i++)
+            //{
+            //    switch (ship.Direction)
+            //    {
+            //        case Direction.Down:
+            //            overRow++;
+            //            break;
+            //        case Direction.Up:
+            //            overRow--;
+            //            break;
+            //        case Direction.Left:
+            //            overCol--;
+            //            break;
+            //        case Direction.Right:
+            //            overCol++;
+            //            break;
+            //    }
+
+            //    var nextCell = CellFromCoords(_shipCells, overRow, overCol) as ShipCell;
+            //    if (nextCell != null)
+            //    {
+            //        nextCell.Ship = ship;
+            //        nextCell.PlacingShip = false;
+            //    }
+            //}
 
             shipsBox.Invalidate();
         }
@@ -278,12 +318,44 @@ namespace Battleship
             }
         }
 
-        private void ClearPlacedShips()
+        private void ClearPlacedShip(Ship ship)
         {
+
+            int n = 0;
             for (int i = 0; i < _shipCells.Length; i++)
             {
-                _shipCells[i].PlacingShip = false;
+                if (_shipCells[i].Ship != null && _shipCells[i].Ship.Name == ship.Name)
+                {
+                    if (_shipCells[i].PlacingShip)
+                    {
+                        _shipCells[i].Ship = null;
+                        _shipCells[i].PlacingShip = false;
+                        n++;
+                    }
+                }
+
             }
+
+            Debug.WriteLine($"Clear Ship {ship.Name}: {n}");
+
+        }
+
+
+        private void ClearPlacedShips()
+        {
+            int n = 0;
+            for (int i = 0; i < _shipCells.Length; i++)
+            {
+                if (_shipCells[i].PlacingShip)
+                {
+                    _shipCells[i].Ship = null;
+                    _shipCells[i].PlacingShip = false;
+                    n++;
+                }
+            }
+
+            Debug.WriteLine($"Clear Ships: {n}");
+
         }
 
         private Cell CellFromCoords(Cell[] cells, int row, int column)
@@ -314,11 +386,35 @@ namespace Battleship
                 if (Helpers.PointIsInsidePolygon(_shotCells[i].CellBox, location))
                 {
                     _shotCells[i].HasShot = true;
-                    _shotCells[i].IsHit = RandomHit();
+                    _shotCells[i].IsHit = IsHit(_shipCells[i], _shipCells);
+
+                    //var test = IsHit(_shipCells[i], _shipCells);
                 }
             }
 
             shotsBox.Invalidate();
+            shipsBox.Invalidate();
+        }
+
+        private bool IsHit(ShotCell cell, ShipCell[] shipBoard)
+        {
+            var shipCell = CellFromCoords(shipBoard, cell.Row, cell.Column) as ShipCell;
+
+            if (shipCell != null && shipCell.HasShip)
+            {
+                shipCell.HasShot = true;
+                shipCell.IsHit = true;
+                return true;
+            }
+            else
+            {
+                shipCell.HasShot = true;
+                shipCell.IsHit = false;
+            }
+
+
+            return false;
+
         }
 
         private bool RandomHit()
@@ -348,11 +444,14 @@ namespace Battleship
 
         private void shipsBox_MouseMove(object sender, MouseEventArgs e)
         {
+            //Debug.WriteLine("Move");
             PositionShip(_currentShip, e.Location);
         }
 
         private void shipsBox_MouseClick(object sender, MouseEventArgs e)
         {
+            Debug.WriteLine("Click");
+
             PlaceShip(_currentShip, e.Location);
 
             if (_currentShipIdx < _ships.Length - 1)

@@ -48,6 +48,7 @@ namespace Battleship
             // 
             // shipsBox
             // 
+            this.shipsBox.BackColor = System.Drawing.Color.Gray;
             this.shipsBox.Location = new System.Drawing.Point(610, 53);
             this.shipsBox.Name = "shipsBox";
             this.shipsBox.Size = new System.Drawing.Size(400, 400);
