@@ -20,6 +20,7 @@ namespace Battleship
         private SolidBrush _missBrush = new SolidBrush(Color.White);
         private SolidBrush _shipBrush = new SolidBrush(Color.Blue);
         private SolidBrush _invalidShipBrush = new SolidBrush(Color.Yellow);
+        private SolidBrush _sunkShipBrush = new SolidBrush(Color.MediumSeaGreen);
 
         private Size _boardSize;
         private Random _rnd = new Random();
@@ -36,7 +37,7 @@ namespace Battleship
             _boardSize = shotsBox.Size;
             shipsBox.MouseWheel += shipsBox_MouseWheel;
             shipsBox2.MouseWheel += ShipsBox2_MouseWheel;
-          
+
             InitBoard();
             RefreshPlayerBoards();
         }
@@ -87,6 +88,7 @@ namespace Battleship
                 if (cell.HasShip)
                     gfx.FillPolygon(_shipBrush, cell.CellBox);
 
+
                 if (cell.PlacingShip && board.PlacingShip)
                     gfx.FillPolygon(_shipBrush, cell.CellBox);
 
@@ -95,16 +97,23 @@ namespace Battleship
 
                 if (cell.HasShot)
                 {
-                    if (cell.IsHit)
-                        gfx.FillPolygon(_hitBrush, cell.CellBox);
+                    if (cell.HasShip && cell.Ship.IsSunk)
+                    {
+                        gfx.FillPolygon(_sunkShipBrush, cell.CellBox);
+                    }
                     else
-                        gfx.FillPolygon(_missBrush, cell.CellBox);
+                    {
+                        if (cell.IsHit)
+                            gfx.FillPolygon(_hitBrush, cell.CellBox);
+                        else
+                            gfx.FillPolygon(_missBrush, cell.CellBox);
+                    }
                 }
 
                 gfx.DrawPolygon(_cellPen, cell.CellBox);
             }
         }
-      
+
         private bool RandomHit()
         {
             var num = _rnd.Next(0, 2);
@@ -151,12 +160,17 @@ namespace Battleship
 
         private void shotsBox_MouseClick(object sender, MouseEventArgs e)
         {
-            _playerBoard.TakeShot(e.Location, _computerBoard);
+            var playerHit = _playerBoard.TakeShot(e.Location, _computerBoard);
+
+            //Debug.WriteLine($"Player hit: {playerHit}");
+            Debug.WriteLine($"Player defeated: {_playerBoard.IsDefeated()}");
             Debug.WriteLine($"Comp defeated: {_computerBoard.IsDefeated()}");
             RefreshPlayerBoards();
 
-            Task.Delay(2000).Wait();
-            _compAI.TakeShot();
+            Task.Delay(500).Wait();
+            var compHit = _compAI.TakeShot();
+            //Debug.WriteLine($"Comp hit: {compHit}");
+
             RefreshPlayerBoards();
         }
 
@@ -203,6 +217,24 @@ namespace Battleship
         {
             _computerBoard.RotateShip(e.Delta, e.Location);
             RefreshPlayerBoards();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
+            _playerBoard.RandomizeBoard();
+
+            _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
+            _computerBoard.RandomizeBoard();
+
+            _compAI = new ComputerAI(_computerBoard, _playerBoard);
+
+            RefreshPlayerBoards();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            shipsBox2.Visible = !shipsBox2.Visible;
         }
     }
 }

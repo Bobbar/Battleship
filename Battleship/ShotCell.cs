@@ -13,6 +13,7 @@ namespace Battleship
         public int Column { get; set; } = -1;
         public int Row { get; set; } = -1;
         public Point[] CellBox { get; set; }
+        public Point Location { get { return Helpers.CenterOfPolygon(CellBox); } }
 
         public override string ToString()
         {
@@ -24,9 +25,6 @@ namespace Battleship
     {
         public bool HasShot { get; set; } = false;
         public bool IsHit { get; set; } = false;
-        //public string Column { get; set; }
-        //public string Row { get; set; }
-        //public Point[] CellBox { get; set; }
 
         public ShotCell()
         {

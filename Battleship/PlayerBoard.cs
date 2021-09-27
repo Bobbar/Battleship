@@ -18,6 +18,8 @@ namespace Battleship
         private bool _placingShip = true;
         private Size _boardSize;
         private int _playerNumber = -1;
+        private Random _rnd = new Random();
+
         private Ship _currentShip
         {
             get
@@ -31,8 +33,20 @@ namespace Battleship
 
         public ShotCell[] ShotCells { get { return _shotCells; } }
         public ShipCell[] ShipCells { get { return _shipCells; } }
-
         public bool PlacingShip { get { return _placingShip; } }
+
+        public int ShipsSunk
+        {
+            get
+            {
+                int n = 0;
+                foreach (var ship in _ships)
+                    if (ship.IsSunk)
+                        n++;
+                return n;
+            }
+        }
+
         public PlayerBoard(Size boardSize, Ship[] ships, int playerNumber)
         {
             _boardSize = boardSize;
@@ -130,18 +144,27 @@ namespace Battleship
         }
 
 
-        public void PlaceShip(Point location)
+        public bool PlaceShip(Point location)
         {
             if (_currentShip == null)
-                return;
+                return false;
 
             if (!_currentShip.ValidPlacement())
-                return;
+                return false; ;
+
+            for (int i = 0; i < _currentShip.Cells.Length; i++)
+            {
+                var cell = Helpers.CellFromCoords(_shipCells, _currentShip.Cells[i].Row, _currentShip.Cells[i].Column) as ShipCell;
+                if (cell.Ship.Name != _currentShip.Name)
+                    return false;
+            }
 
             for (int i = 0; i < _currentShip.Cells.Length; i++)
                 _currentShip.Cells[i].PlacingShip = false;
 
             NextShip();
+
+            return true;
         }
 
         public void RotateShip(int mDelta, Point location)
@@ -184,6 +207,23 @@ namespace Battleship
             }
         }
 
+        public void RandomizeBoard()
+        {
+            while (_placingShip)
+            {
+                var cell = Helpers.GetRandomCell(_shipCells) as ShipCell;
+                while (cell.HasShip)
+                    cell = Helpers.GetRandomCell(_shipCells) as ShipCell;
+
+                var dir = Helpers.GetRandomDirection();
+                _currentShip.Direction = dir;
+
+                PositionShip(cell.Location);
+
+                PlaceShip(cell.Location);
+            }
+        }
+
         private void ClearPlacedShip(Ship ship)
         {
             int n = 0;
@@ -202,11 +242,13 @@ namespace Battleship
             }
         }
 
-        public void TakeShot(Point location, PlayerBoard otherBoard)
+        public bool TakeShot(Point location, PlayerBoard otherBoard)
         {
             var shotCell = Helpers.CellFromPosition(ShotCells, location) as ShotCell;
             if (shotCell == null)
-                return;
+                return false;
+
+            Debug.WriteLine(shotCell);
 
             var shipCell = Helpers.CellFromCoords(otherBoard.ShipCells, shotCell.Row, shotCell.Column) as ShipCell;
 
@@ -214,39 +256,46 @@ namespace Battleship
             {
                 shipCell.SetHit();
                 shotCell.SetHit();
+                return true;
+
             }
             else
             {
                 shipCell.SetMiss();
                 shotCell.SetMiss();
+                return false;
             }
 
         }
 
-        public void TakeShot(ShotCell shotCell, PlayerBoard otherBoard)
+        public bool TakeShot(ShotCell shotCell, PlayerBoard otherBoard)
         {
             //var shotCell = Helpers.CellFromPosition(ShotCells, location) as ShotCell;
             //if (shotCell == null)
             //    return;
 
+            Debug.WriteLine($"Take Shot: {shotCell}");
+
             var shipCell = Helpers.CellFromCoords(otherBoard.ShipCells, shotCell.Row, shotCell.Column) as ShipCell;
 
             if (shipCell.HasShip)
             {
                 shipCell.SetHit();
                 shotCell.SetHit();
+                return true;
             }
             else
             {
                 shipCell.SetMiss();
                 shotCell.SetMiss();
+                return false;
             }
 
         }
 
         public bool IsDefeated()
         {
-            foreach(var ship in _ships)
+            foreach (var ship in _ships)
             {
                 if (ship.IsSunk == false)
                     return false;

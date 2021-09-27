@@ -23,7 +23,7 @@ namespace Battleship
             {
                 int hits = 0;
                 foreach (var cell in Cells)
-                    if (cell.IsHit)
+                    if (cell != null && cell.IsHit)
                         hits++;
 
                 return hits == Length;
