@@ -33,6 +33,7 @@ namespace Battleship
 
         public ShotCell[] ShotCells { get { return _shotCells; } }
         public ShipCell[] ShipCells { get { return _shipCells; } }
+        public Ship[] Ships { get { return _ships; } }
         public bool PlacingShip { get { return _placingShip; } }
         public int ShotsTaken 
         {
@@ -128,7 +129,6 @@ namespace Battleship
             {
                 overCell.Ship = _currentShip;
                 overCell.PlacingShip = true;
-
             }
 
             int overCol = overCell.Column;

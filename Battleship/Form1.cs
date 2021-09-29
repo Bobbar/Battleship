@@ -15,7 +15,7 @@ namespace Battleship
 {
     public partial class Form1 : Form
     {
-        private Pen _cellPen = new Pen(Brushes.Black, 2.0f);
+        private Pen _cellPen = new Pen(Brushes.Black, 1.0f);
         private SolidBrush _hitBrush = new SolidBrush(Color.Red);
         private SolidBrush _missBrush = new SolidBrush(Color.White);
         private SolidBrush _shipBrush = new SolidBrush(Color.LightGray);
@@ -79,16 +79,15 @@ namespace Battleship
             gfx.SmoothingMode = SmoothingMode.HighQuality;
             gfx.Clear(shotsBox.BackColor);
 
+
+            foreach (var ship in otherBoard.Ships)
+                DrawShip(gfx, ship, true);
+
             foreach (var cell in board.ShotCells)
             {
-                var ship = Helpers.CellFromCoords(otherBoard.ShipCells, cell.Row, cell.Column) as ShipCell;
-                if (ship.HasShip && ship.Ship.IsSunk)
-                    gfx.FillPolygon(_hitBrush, cell.CellBox);
-
                 gfx.DrawPolygon(_cellPen, cell.CellBox);
 
                 DrawPeg(gfx, cell);
-
 
                 //// Draw coords.
                 //var center = Helpers.CenterOfPolygon(cell.CellBox);
@@ -105,9 +104,12 @@ namespace Battleship
             gfx.SmoothingMode = SmoothingMode.HighQuality;
             gfx.Clear(shipsBox.BackColor);
 
+            foreach (var ship in board.Ships)
+                DrawShip(gfx, ship);
+
             foreach (var cell in board.ShipCells)
             {
-                DrawShip(gfx, cell, board);
+                DrawShipCell(gfx, cell, board);
 
                 gfx.DrawPolygon(_cellPen, cell.CellBox);
 
@@ -151,19 +153,33 @@ namespace Battleship
 
         }
 
-        private void DrawShip(Graphics gfx, ShipCell cell, PlayerBoard board)
+        private void DrawShip(Graphics gfx, Ship ship, bool shotBoard = false)
         {
-            if (cell.HasShip)
-                gfx.FillPolygon(_shipBrush, cell.CellBox);
+            if (!ship.ValidPlacement())
+                return;
 
+            if (shotBoard && !ship.IsSunk)
+                return;
+
+            var rect = ship.GetRectangle();
+            var rectPath = Helpers.RoundedRect(rect, 15);
+            var brush = ship.IsSunk ? _sunkShipBrush : _shipBrush;
+
+            if (shotBoard)
+                brush = _hitBrush;
+
+            gfx.FillPath(brush, rectPath);
+        }
+
+        private void DrawShipCell(Graphics gfx, ShipCell cell, PlayerBoard board)
+        {
             if (cell.PlacingShip && board.PlacingShip)
+            {
                 gfx.FillPolygon(_shipBrush, cell.CellBox);
+            }
 
             if (cell.Ship != null && !cell.Ship.ValidPlacement())
                 gfx.FillPolygon(_invalidShipBrush, cell.CellBox);
-
-            if (cell.HasShot && cell.HasShip && cell.Ship.IsSunk)
-                gfx.FillPolygon(_sunkShipBrush, cell.CellBox);
 
         }
 

@@ -70,17 +70,32 @@ namespace Battleship
 
         }
 
+        public RectangleF GetRectangle()
+        {
+            var first = Cells.First();
+            var last = Cells.Last();
 
-        //private void InitCells()
-        //{
-        //    Cells = new Point[Length];
+            if (first == null || last == null)
+            {
+                return new RectangleF(0, 0, 0, 0);
+            }
 
-        //    int offset = 
-        //    for(int i = 0; i < Length; i++)
-        //    {
+            if (Direction == Direction.Left || Direction == Direction.Up)
+            {
+                var width = first.CellBox[2].X - last.CellBox[0].X;
+                var height = first.CellBox[2].Y - last.CellBox[0].Y;
 
-        //    }
-        //}
+                return new RectangleF(last.CellBox[0].X, last.CellBox[0].Y, width, height);
+            }
+            else
+            {
+                var width = last.CellBox[2].X - first.CellBox[0].X;
+                var height = last.CellBox[2].Y - first.CellBox[0].Y;
+
+                return new RectangleF(first.CellBox[0].X, first.CellBox[0].Y, width, height);
+            }
+        }
+
     }
 
     public enum Direction
@@ -89,10 +104,5 @@ namespace Battleship
         Right,
         Down,
         Left
-
-        //Up,
-        //Down,
-        //Left,
-        //Right
     }
 }
