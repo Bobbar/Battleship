@@ -51,7 +51,7 @@ namespace Battleship
             // 
             // shotsBox
             // 
-            this.shotsBox.BackColor = System.Drawing.Color.Silver;
+            this.shotsBox.BackColor = System.Drawing.Color.DimGray;
             this.shotsBox.Location = new System.Drawing.Point(66, 53);
             this.shotsBox.Name = "shotsBox";
             this.shotsBox.Size = new System.Drawing.Size(400, 400);
@@ -62,7 +62,7 @@ namespace Battleship
             // 
             // shipsBox
             // 
-            this.shipsBox.BackColor = System.Drawing.Color.Gray;
+            this.shipsBox.BackColor = System.Drawing.Color.DodgerBlue;
             this.shipsBox.Location = new System.Drawing.Point(66, 459);
             this.shipsBox.Name = "shipsBox";
             this.shipsBox.Size = new System.Drawing.Size(400, 400);
@@ -74,7 +74,7 @@ namespace Battleship
             // 
             // shotsBox2
             // 
-            this.shotsBox2.BackColor = System.Drawing.Color.Silver;
+            this.shotsBox2.BackColor = System.Drawing.Color.DimGray;
             this.shotsBox2.Location = new System.Drawing.Point(707, 53);
             this.shotsBox2.Name = "shotsBox2";
             this.shotsBox2.Size = new System.Drawing.Size(400, 400);
@@ -85,7 +85,7 @@ namespace Battleship
             // 
             // shipsBox2
             // 
-            this.shipsBox2.BackColor = System.Drawing.Color.Gray;
+            this.shipsBox2.BackColor = System.Drawing.Color.DodgerBlue;
             this.shipsBox2.Location = new System.Drawing.Point(707, 459);
             this.shipsBox2.Name = "shipsBox2";
             this.shipsBox2.Size = new System.Drawing.Size(400, 400);
@@ -221,6 +221,7 @@ namespace Battleship
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Fixed3D;
             this.Name = "Form1";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)(this.shotsBox)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.shipsBox)).EndInit();

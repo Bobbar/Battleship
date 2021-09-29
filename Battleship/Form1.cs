@@ -18,9 +18,11 @@ namespace Battleship
         private Pen _cellPen = new Pen(Brushes.Black, 2.0f);
         private SolidBrush _hitBrush = new SolidBrush(Color.Red);
         private SolidBrush _missBrush = new SolidBrush(Color.White);
-        private SolidBrush _shipBrush = new SolidBrush(Color.Blue);
+        private SolidBrush _shipBrush = new SolidBrush(Color.LightGray);
         private SolidBrush _invalidShipBrush = new SolidBrush(Color.Yellow);
-        private SolidBrush _sunkShipBrush = new SolidBrush(Color.MediumSeaGreen);
+        private SolidBrush _sunkShipBrush = new SolidBrush(Color.Blue);
+        private SolidBrush _emptyPegBrush = new SolidBrush(Color.FromArgb(150, Color.Gray));
+
         private Font _cellCoordFont = new Font("Tahoma", 5, FontStyle.Regular);
         private Size _boardSize;
         private Random _rnd = new Random();
@@ -49,7 +51,6 @@ namespace Battleship
 
             _compAI = new ComputerAI(_computerBoard, _playerBoard);
             WireEvents();
-
         }
 
         private void WireEvents()
@@ -62,7 +63,6 @@ namespace Battleship
 
         }
 
-
         private Ship[] GetShips()
         {
             var ships = new List<Ship>();
@@ -74,73 +74,97 @@ namespace Battleship
             return ships.ToArray();
         }
 
-        private void DrawShotsBoard(Graphics gfx, PlayerBoard board)
+        private void DrawShotsBoard(Graphics gfx, PlayerBoard board, PlayerBoard otherBoard)
         {
+            gfx.SmoothingMode = SmoothingMode.HighQuality;
             gfx.Clear(shotsBox.BackColor);
 
             foreach (var cell in board.ShotCells)
             {
-                if (cell.HasShot)
-                {
-                    if (cell.IsHit)
-                        gfx.FillPolygon(_hitBrush, cell.CellBox);
-                    else
-                        gfx.FillPolygon(_missBrush, cell.CellBox);
-                }
+                var ship = Helpers.CellFromCoords(otherBoard.ShipCells, cell.Row, cell.Column) as ShipCell;
+                if (ship.HasShip && ship.Ship.IsSunk)
+                    gfx.FillPolygon(_hitBrush, cell.CellBox);
 
                 gfx.DrawPolygon(_cellPen, cell.CellBox);
 
-                var center = Helpers.CenterOfPolygon(cell.CellBox);
-                string label = $"({cell.Column}/{cell.Row})";
-                var lblSize = gfx.MeasureString(label, _cellCoordFont);
-                center.X -= (int)(lblSize.Width / 2f);
-                center.Y -= (int)(lblSize.Height / 2f);
+                DrawPeg(gfx, cell);
 
-                gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
+
+                //// Draw coords.
+                //var center = Helpers.CenterOfPolygon(cell.CellBox);
+                //string label = $"({cell.Column}/{cell.Row})";
+                //var lblSize = gfx.MeasureString(label, _cellCoordFont);
+                //center.X -= (int)(lblSize.Width / 2f);
+                //center.Y -= (int)(lblSize.Height / 2f);
+                //gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
             }
         }
 
         private void DrawShipsBoard(Graphics gfx, PlayerBoard board)
         {
+            gfx.SmoothingMode = SmoothingMode.HighQuality;
             gfx.Clear(shipsBox.BackColor);
 
             foreach (var cell in board.ShipCells)
             {
-                if (cell.HasShip)
-                    gfx.FillPolygon(_shipBrush, cell.CellBox);
-
-
-                if (cell.PlacingShip && board.PlacingShip)
-                    gfx.FillPolygon(_shipBrush, cell.CellBox);
-
-                if (cell.Ship != null && !cell.Ship.ValidPlacement())
-                    gfx.FillPolygon(_invalidShipBrush, cell.CellBox);
-
-                if (cell.HasShot)
-                {
-                    if (cell.HasShip && cell.Ship.IsSunk)
-                    {
-                        gfx.FillPolygon(_sunkShipBrush, cell.CellBox);
-                    }
-                    else
-                    {
-                        if (cell.IsHit)
-                            gfx.FillPolygon(_hitBrush, cell.CellBox);
-                        else
-                            gfx.FillPolygon(_missBrush, cell.CellBox);
-                    }
-                }
+                DrawShip(gfx, cell, board);
 
                 gfx.DrawPolygon(_cellPen, cell.CellBox);
 
-                var center = Helpers.CenterOfPolygon(cell.CellBox);
-                string label = $"({cell.Column}/{cell.Row})";
-                var lblSize = gfx.MeasureString(label, _cellCoordFont);
-                center.X -= (int)(lblSize.Width / 2f);
-                center.Y -= (int)(lblSize.Height / 2f);
+                DrawPeg(gfx, cell);
 
-                gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
+                //// Draw coords.
+                //var center = Helpers.CenterOfPolygon(cell.CellBox);
+                //string label = $"({cell.Column}/{cell.Row})";
+                //var lblSize = gfx.MeasureString(label, _cellCoordFont);
+                //center.X -= (int)(lblSize.Width / 2f);
+                //center.Y -= (int)(lblSize.Height / 2f);
+                //gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
             }
+        }
+
+
+        private void DrawPeg(Graphics gfx, ShotCell cell)
+        {
+            const int pegSize = 15;
+            var center = Helpers.CenterOfPolygon(cell.CellBox);
+            center.X -= pegSize / 2;
+            center.Y -= pegSize / 2;
+
+            if (cell.IsHit)
+            {
+                gfx.DrawEllipse(Pens.Black, center.X, center.Y, pegSize, pegSize);
+                gfx.FillEllipse(_hitBrush, center.X, center.Y, pegSize, pegSize);
+                return;
+            }
+
+            if (cell.HasShot)
+            {
+                gfx.DrawEllipse(Pens.Black, center.X, center.Y, pegSize, pegSize);
+                gfx.FillEllipse(_missBrush, center.X, center.Y, pegSize, pegSize);
+            }
+            else
+            {
+                gfx.DrawEllipse(Pens.Black, center.X, center.Y, pegSize, pegSize);
+                gfx.FillEllipse(_emptyPegBrush, center.X, center.Y, pegSize, pegSize);
+            }
+
+        }
+
+        private void DrawShip(Graphics gfx, ShipCell cell, PlayerBoard board)
+        {
+            if (cell.HasShip)
+                gfx.FillPolygon(_shipBrush, cell.CellBox);
+
+            if (cell.PlacingShip && board.PlacingShip)
+                gfx.FillPolygon(_shipBrush, cell.CellBox);
+
+            if (cell.Ship != null && !cell.Ship.ValidPlacement())
+                gfx.FillPolygon(_invalidShipBrush, cell.CellBox);
+
+            if (cell.HasShot && cell.HasShip && cell.Ship.IsSunk)
+                gfx.FillPolygon(_sunkShipBrush, cell.CellBox);
+
         }
 
         private bool RandomHit()
@@ -173,7 +197,7 @@ namespace Battleship
 
         private void shotsBox_Paint(object sender, PaintEventArgs e)
         {
-            DrawShotsBoard(e.Graphics, _playerBoard);
+            DrawShotsBoard(e.Graphics, _playerBoard, _computerBoard);
         }
 
         private void shipsBox_Paint(object sender, PaintEventArgs e)
@@ -183,7 +207,7 @@ namespace Battleship
 
         private void shotsBox2_Paint(object sender, PaintEventArgs e)
         {
-            DrawShotsBoard(e.Graphics, _computerBoard);
+            DrawShotsBoard(e.Graphics, _computerBoard, _playerBoard);
 
         }
 
@@ -196,18 +220,31 @@ namespace Battleship
         {
             shipSunkLabel.Visible = false;
 
-            var playerHit = _playerBoard.TakeShot(e.Location, _computerBoard);
+            try
+            {
+                _playerBoard.TakeShot(e.Location, _computerBoard);
+                RefreshPlayerBoards();
+            }
+            catch (Exception)
+            {
+                Debug.WriteLine("[Human] Clicked the same cell twice?");
+                return;
+            }
 
-            //Debug.WriteLine($"Player hit: {playerHit}");
-            Debug.WriteLine($"Player defeated: {_playerBoard.IsDefeated()}");
-            Debug.WriteLine($"Comp defeated: {_computerBoard.IsDefeated()}");
-            RefreshPlayerBoards();
 
             Task.Delay(500).Wait();
-            var compHit = _compAI.TakeShot();
-            //Debug.WriteLine($"Comp hit: {compHit}");
 
-            RefreshPlayerBoards();
+            try
+            {
+                _compAI.TakeShot();
+                RefreshPlayerBoards();
+            }
+            catch (Exception)
+            {
+
+                Debug.WriteLine("[AI] Clicked the same cell twice?");
+                return;
+            }
 
             if (_playerBoard.IsDefeated())
             {
@@ -227,9 +264,9 @@ namespace Battleship
 
         private void shotsBox2_MouseClick(object sender, MouseEventArgs e)
         {
-            _computerBoard.TakeShot(e.Location, _playerBoard);
-            Debug.WriteLine($"Player defeated: {_playerBoard.IsDefeated()}");
-            RefreshPlayerBoards();
+            //_computerBoard.TakeShot(e.Location, _playerBoard);
+            //Debug.WriteLine($"Player defeated: {_playerBoard.IsDefeated()}");
+            //RefreshPlayerBoards();
         }
 
         private void shipsBox_MouseMove(object sender, MouseEventArgs e)
@@ -297,9 +334,9 @@ namespace Battleship
             _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
             _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
             _compAI = new ComputerAI(_computerBoard, _playerBoard);
-            
+
             WireEvents();
-           
+
             winnerLabel.Visible = false;
             shipSunkLabel.Visible = false;
 
@@ -311,15 +348,13 @@ namespace Battleship
             _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
             _computerBoard.RandomizeBoard();
             _compAI = new ComputerAI(_computerBoard, _playerBoard);
-          
+
             WireEvents();
 
             winnerLabel.Visible = false;
 
             RefreshPlayerBoards();
         }
-
-
 
         private void _computerBoard_ShipWasSunk(object sender, string e)
         {
@@ -331,7 +366,6 @@ namespace Battleship
         {
             shipSunkLabel.Text = $"Computer {e} was sunk!";
             shipSunkLabel.Visible = true;
-
         }
     }
 }

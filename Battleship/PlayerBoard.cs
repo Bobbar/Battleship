@@ -19,9 +19,6 @@ namespace Battleship
         private Size _boardSize;
         private int _playerNumber = -1;
         private Random _rnd = new Random();
-        
-        public event EventHandler<string> ShipWasSunk;
-
 
         private Ship _currentShip
         {
@@ -73,6 +70,8 @@ namespace Battleship
             }
         }
 
+        public event EventHandler<string> ShipWasSunk;
+
         public PlayerBoard(Size boardSize, Ship[] ships, int playerNumber)
         {
             _boardSize = boardSize;
@@ -81,7 +80,6 @@ namespace Battleship
             _playerNumber = playerNumber;
 
             InitBoard();
-
         }
 
         private void InitBoard()
@@ -168,7 +166,6 @@ namespace Battleship
                 _currentShip.Cells[i + 1] = nextCell;
             }
         }
-
 
         public bool PlaceShip(Point location)
         {
@@ -271,10 +268,9 @@ namespace Battleship
         public bool TakeShot(Point location, PlayerBoard otherBoard)
         {
             var shotCell = Helpers.CellFromPosition(ShotCells, location) as ShotCell;
-            if (shotCell == null)
-                return false;
 
-            Debug.WriteLine(shotCell);
+            if (shotCell.HasShot)
+                throw new Exception("This cell already contains a shot dummy!");
 
             var shipCell = Helpers.CellFromCoords(otherBoard.ShipCells, shotCell.Row, shotCell.Column) as ShipCell;
 
@@ -300,13 +296,8 @@ namespace Battleship
 
         public bool TakeShot(ShotCell shotCell, PlayerBoard otherBoard)
         {
-            //var shotCell = Helpers.CellFromPosition(ShotCells, location) as ShotCell;
-            //if (shotCell == null)
-            //    return;
             if (shotCell.HasShot)
-                Debugger.Break();
-
-            Debug.WriteLine($"Take Shot: {shotCell}");
+                throw new Exception("This cell already contains a shot dummy!");
 
             var shipCell = Helpers.CellFromCoords(otherBoard.ShipCells, shotCell.Row, shotCell.Column) as ShipCell;
 
@@ -329,12 +320,10 @@ namespace Battleship
 
         }
 
-
         private void OnShipSunk(Ship ship)
         {
             ShipWasSunk?.Invoke(this, ship.Name);
         }
-
 
         public bool IsDefeated()
         {
@@ -346,8 +335,5 @@ namespace Battleship
 
             return true;
         }
-
-
-
     }
 }
