@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
 using System.Diagnostics;
-
+using System.Collections;
 namespace Battleship
 {
     public class PlayerBoard
@@ -19,6 +19,9 @@ namespace Battleship
         private Size _boardSize;
         private int _playerNumber = -1;
         private Random _rnd = new Random();
+        
+        public event EventHandler<string> ShipWasSunk;
+
 
         private Ship _currentShip
         {
@@ -34,6 +37,14 @@ namespace Battleship
         public ShotCell[] ShotCells { get { return _shotCells; } }
         public ShipCell[] ShipCells { get { return _shipCells; } }
         public bool PlacingShip { get { return _placingShip; } }
+        public int ShotsTaken 
+        {
+            get 
+            {
+                var shots = ShotCells.Where(c => c.HasShot).ToArray();
+                return shots.Length;
+            } 
+        }
 
         public int ShipsSunk
         {
@@ -44,6 +55,21 @@ namespace Battleship
                     if (ship.IsSunk)
                         n++;
                 return n;
+            }
+        }
+
+        public Ship[] SunkShips
+        {
+            get
+            {
+                var sunk = new List<Ship>();
+                foreach(var ship in _ships)
+                {
+                    if (ship.IsSunk)
+                        sunk.Add(ship);
+                }
+
+                return sunk.ToArray();
             }
         }
 
@@ -256,6 +282,10 @@ namespace Battleship
             {
                 shipCell.SetHit();
                 shotCell.SetHit();
+
+                if (shipCell.Ship.IsSunk)
+                    OnShipSunk(shipCell.Ship);
+
                 return true;
 
             }
@@ -273,6 +303,8 @@ namespace Battleship
             //var shotCell = Helpers.CellFromPosition(ShotCells, location) as ShotCell;
             //if (shotCell == null)
             //    return;
+            if (shotCell.HasShot)
+                Debugger.Break();
 
             Debug.WriteLine($"Take Shot: {shotCell}");
 
@@ -282,6 +314,10 @@ namespace Battleship
             {
                 shipCell.SetHit();
                 shotCell.SetHit();
+
+                if (shipCell.Ship.IsSunk)
+                    OnShipSunk(shipCell.Ship);
+
                 return true;
             }
             else
@@ -293,6 +329,13 @@ namespace Battleship
 
         }
 
+
+        private void OnShipSunk(Ship ship)
+        {
+            ShipWasSunk?.Invoke(this, ship.Name);
+        }
+
+
         public bool IsDefeated()
         {
             foreach (var ship in _ships)
@@ -303,6 +346,8 @@ namespace Battleship
 
             return true;
         }
+
+
 
     }
 }

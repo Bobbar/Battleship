@@ -12,10 +12,7 @@ namespace Battleship
         private Random _rnd = new Random();
         private PlayerBoard _board;
         private PlayerBoard _humanBoard;
-        private bool _lastShotWasHit = false;
-        private bool _lastFollowShotWasHit = false;
         private bool _directionFound { get { return _hitsInARow >= 2; } }
-        private bool _returnedToFirst = false;
         private int _hitsInARow = 0;
         private bool _isOnShip = false;
         private ShotCell _lastHit = new ShotCell();
@@ -33,6 +30,9 @@ namespace Battleship
         public bool TakeShot()
         {
             bool wasHit = false;
+
+            LookForUnfinishedBusiness();
+
             if (!_isOnShip)
             {
                 var shotCell = GetRandomShot();
@@ -43,13 +43,11 @@ namespace Battleship
                     _firstHit = shotCell;
                     _lastHit = shotCell;
                     _isOnShip = true;
-                    _lastShotWasHit = true;
                     _hitsInARow = 1;
                 }
                 else
                 {
                     _isOnShip = false;
-                    _lastShotWasHit = false;
                     _hitsInARow = 0;
                 }
             }
@@ -57,6 +55,8 @@ namespace Battleship
             {
                 if (!_directionFound)
                 {
+                    LookForUnfinishedBusiness();
+
                     var dirs = GetAvailableDirections(_lastHit);
 
                     if (dirs.Length > 0)
@@ -70,6 +70,10 @@ namespace Battleship
                         Debug.WriteLine("No shots possible?");
                         _lastHit = _firstHit;
                         _followDir = Helpers.FlipDirection(_followDir);
+                        //LookForUnfinishedBusiness();
+                        _hitsInARow = 0;
+                        _isOnShip = false;
+
                         return TakeShot();
                     }
 
@@ -85,6 +89,8 @@ namespace Battleship
                         {
                             _isOnShip = false;
                             _hitsInARow = 0;
+
+                            LookForUnfinishedBusiness();
                         }
                     }
                 }
@@ -93,6 +99,10 @@ namespace Battleship
                     if (CanMoveInDirection(_lastHit, _followDir))
                     {
                         var followShot = GetNextCellInDirection(_lastHit, _followDir);
+
+                        if (followShot.HasShot)
+                            Debugger.Break();
+
                         wasHit = _board.TakeShot(followShot, _humanBoard);
 
                         if (wasHit)
@@ -104,6 +114,8 @@ namespace Battleship
                             {
                                 _isOnShip = false;
                                 _hitsInARow = 0;
+
+                                LookForUnfinishedBusiness();
                             }
                         }
                         else
@@ -116,6 +128,7 @@ namespace Battleship
                     else
                     {
                         _hitsInARow = 0;
+                        return TakeShot();
                     }
                 }
 
@@ -124,6 +137,59 @@ namespace Battleship
             return wasHit;
         }
 
+        private void LookForUnfinishedBusiness()
+        {
+            if (_isOnShip)
+                return;
+
+            Debug.WriteLine("LookForUnfinishedBusiness....");
+
+            var sunkShips = _humanBoard.SunkShips;
+            if (sunkShips.Length == 0)
+                return;
+
+            for (int i = 0; i < _board.ShotCells.Length; i++)
+            {
+                var cell = _board.ShotCells[i];
+
+                var dirs = GetAvailableDirections(cell);
+
+                if (cell.IsHit && dirs.Length > 0)
+                {
+                    bool isOnShip = false;
+                    foreach(var ship in sunkShips)
+                    {
+                        if (IsOnSunkShip(cell, ship.Cells))
+                        {
+                            isOnShip = true;
+                        }
+
+                    }
+
+                    if (!isOnShip)
+                    {
+                        _lastHit = cell;
+                        _firstHit = cell;
+                        _isOnShip = true;
+                        return;
+                    }
+                       
+                }
+            }
+        }
+
+        private bool IsOnSunkShip(ShotCell shotCell, ShipCell[] sunkShipCells)
+        {
+            bool isOn = false;
+            foreach(var shipCell in sunkShipCells)
+            {
+                if (shipCell.Row == shotCell.Row && shipCell.Column == shotCell.Column)
+                    isOn = true;
+
+            }
+
+            return isOn;
+        }
       
         private bool SunkShip()
         {
