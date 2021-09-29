@@ -31,8 +31,10 @@ namespace Battleship
         {
             bool wasHit = false;
 
+            // Try to find hits from unsunk ships, and set parameters to try to focus on them.
             LookForUnfinishedBusiness();
 
+            // Not on ship, take random shots.
             if (!_isOnShip)
             {
                 var shotCell = GetRandomShot();
@@ -51,32 +53,29 @@ namespace Battleship
                     _hitsInARow = 0;
                 }
             }
-            else
+            else // We've found a ship.
             {
+                // If we don't think we have found the direction the ship is pointed.
                 if (!_directionFound)
                 {
-                    LookForUnfinishedBusiness();
-
+                    // Get available directions and pick one at random.
                     var dirs = GetAvailableDirections(_lastHit);
 
                     if (dirs.Length > 0)
                     {
                         _followDir = dirs[_rnd.Next(0, dirs.Length)];
-
                     }
                     else
                     {
-                        // No direction possible? Reset? Return to first?
-                        Debug.WriteLine("No shots possible?");
-                        _lastHit = _firstHit;
-                        _followDir = Helpers.FlipDirection(_followDir);
-                        //LookForUnfinishedBusiness();
+                        // No directions possible.
+                        // Reset and try again.
                         _hitsInARow = 0;
                         _isOnShip = false;
 
                         return TakeShot();
                     }
 
+                    // Take a shot in the random direction.
                     var followShot = GetNextCellInDirection(_lastHit, _followDir);
                     wasHit = _board.TakeShot(followShot, _humanBoard);
 
@@ -89,20 +88,16 @@ namespace Battleship
                         {
                             _isOnShip = false;
                             _hitsInARow = 0;
-
-                            LookForUnfinishedBusiness();
                         }
                     }
                 }
-                else
+                else // We may have found the direction of the ship.
                 {
+                    // Make sure we can keep moving in the current direction.
                     if (CanMoveInDirection(_lastHit, _followDir))
                     {
+                        // Take the next shot.
                         var followShot = GetNextCellInDirection(_lastHit, _followDir);
-
-                        if (followShot.HasShot)
-                            Debugger.Break();
-
                         wasHit = _board.TakeShot(followShot, _humanBoard);
 
                         if (wasHit)
@@ -114,25 +109,35 @@ namespace Battleship
                             {
                                 _isOnShip = false;
                                 _hitsInARow = 0;
-
-                                LookForUnfinishedBusiness();
                             }
                         }
                         else
                         {
-                            Debug.WriteLine("Missed follow shot. Now what?");
+                            // Follow shot missed.
+                            // Go back to first hit cell and flip direction.
                             _lastHit = _firstHit;
                             _followDir = Helpers.FlipDirection(_followDir);
                         }
                     }
-                    else
+                    else // Can't take shot in the current direction.
                     {
-                        _hitsInARow = 0;
-                        return TakeShot();
+                        // See if we can move back to the first hit and move in the opposite direction.
+                        if (CanMoveInDirection(_firstHit, Helpers.FlipDirection(_followDir)))
+                        {
+                            // Move to first hit, and flip directions.
+                            _lastHit = _firstHit;
+                            _followDir = Helpers.FlipDirection(_followDir);
+                            return TakeShot();
+                        }
+                        else
+                        {
+                            // Reset start from scratch.
+                            _hitsInARow = 0;
+                            return TakeShot();
+                        }
                     }
                 }
-
-            }  
+            }
 
             return wasHit;
         }
@@ -142,11 +147,7 @@ namespace Battleship
             if (_isOnShip)
                 return;
 
-            Debug.WriteLine("LookForUnfinishedBusiness....");
-
             var sunkShips = _humanBoard.SunkShips;
-            if (sunkShips.Length == 0)
-                return;
 
             for (int i = 0; i < _board.ShotCells.Length; i++)
             {
@@ -157,23 +158,24 @@ namespace Battleship
                 if (cell.IsHit && dirs.Length > 0)
                 {
                     bool isOnShip = false;
-                    foreach(var ship in sunkShips)
+                    foreach (var ship in sunkShips)
                     {
                         if (IsOnSunkShip(cell, ship.Cells))
                         {
                             isOnShip = true;
                         }
-
                     }
 
                     if (!isOnShip)
                     {
+                        // We found a viable cell.
+                        // Set the parameters accordingly to force shots around the cell.
                         _lastHit = cell;
                         _firstHit = cell;
                         _isOnShip = true;
+                        _hitsInARow = 1;
                         return;
                     }
-                       
                 }
             }
         }
@@ -181,7 +183,7 @@ namespace Battleship
         private bool IsOnSunkShip(ShotCell shotCell, ShipCell[] sunkShipCells)
         {
             bool isOn = false;
-            foreach(var shipCell in sunkShipCells)
+            foreach (var shipCell in sunkShipCells)
             {
                 if (shipCell.Row == shotCell.Row && shipCell.Column == shotCell.Column)
                     isOn = true;
@@ -190,7 +192,7 @@ namespace Battleship
 
             return isOn;
         }
-      
+
         private bool SunkShip()
         {
             if (_prevShipsSunk != _humanBoard.ShipsSunk)
@@ -206,16 +208,23 @@ namespace Battleship
             }
         }
 
-       
+
         private ShotCell GetRandomShot()
         {
             var shotCell = new ShotCell();
             shotCell.HasShot = true;
 
-            while (shotCell.HasShot)
+            bool viableShot = false;
+            while (viableShot == false)
             {
                 int rndIdx = _rnd.Next(0, _board.ShotCells.Length);
                 shotCell = _board.ShotCells[rndIdx];
+
+                // Check available directions and only choose cells which have atleast one open neighbor cell. 
+                // No sense wasting shots on cells that couldn't possibly contain a ship.
+                var dirs = GetAvailableDirections(shotCell);
+                if (!shotCell.HasShot && dirs.Length > 0)
+                    viableShot = true;
             }
 
             return shotCell;
@@ -245,18 +254,7 @@ namespace Battleship
                 dirIdx++;
 
             return (Direction)dirIdx;
-
-
-            //var newDir = Helpers.GetRandomDirection();
-            //while (newDir == _followDir)
-            //    newDir = Helpers.GetRandomDirection();
-            //return newDir;
         }
-
-        //private Direction GetRandomDirection()
-        //{
-        //    return (Direction)_rnd.Next(0, 4);
-        //}
 
         private bool CanMoveInDirection(ShotCell currentCell, Direction direction)
         {
@@ -326,54 +324,17 @@ namespace Battleship
                     nextCell = Helpers.CellFromCoords(_board.ShotCells, currentCell.Row + 1, currentCell.Column) as ShotCell;
                     return nextCell;
 
-                //if (nextCell == null)
-                //{
-                //    _followDir = GetNextDirection();
-                //    return GetNextCellInDirection(currentCell);
-                //}
-                //else
-                //{
-                //    return nextCell;
-                //}
-
                 case Direction.Up:
                     nextCell = Helpers.CellFromCoords(_board.ShotCells, currentCell.Row - 1, currentCell.Column) as ShotCell;
                     return nextCell;
-                //if (nextCell == null)
-                //{
-                //    _followDir = GetNextDirection();
-                //    return GetNextCellInDirection(currentCell);
-                //}
-                //else
-                //{
-                //    return nextCell;
-                //}
 
                 case Direction.Left:
                     nextCell = Helpers.CellFromCoords(_board.ShotCells, currentCell.Row, currentCell.Column - 1) as ShotCell;
                     return nextCell;
-                //if (nextCell == null)
-                //{
-                //    _followDir = GetNextDirection();
-                //    return GetNextCellInDirection(currentCell);
-                //}
-                //else
-                //{
-                //    return nextCell;
-                //}
 
                 case Direction.Right:
                     nextCell = Helpers.CellFromCoords(_board.ShotCells, currentCell.Row, currentCell.Column + 1) as ShotCell;
                     return nextCell;
-                    //if (nextCell == null)
-                    //{
-                    //    _followDir = GetNextDirection();
-                    //    return GetNextCellInDirection(currentCell);
-                    //}
-                    //else
-                    //{
-                    //    return nextCell;
-                    //}
             }
 
             return nextCell;

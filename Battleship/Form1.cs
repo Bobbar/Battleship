@@ -211,6 +211,60 @@ namespace Battleship
             computerShotsLabel.Text = $"Shots Taken: {_computerBoard.ShotsTaken}";
         }
 
+        private void StressTest(int its)
+        {
+            _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
+            _playerBoard.RandomizeBoard();
+
+            _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
+            _computerBoard.RandomizeBoard();
+
+            _compAI = new ComputerAI(_computerBoard, _playerBoard);
+
+            for (int i = 0; i < its; i++)
+            {
+                bool gameOver = false;
+
+                while (gameOver == false)
+                {
+                    try
+                    {
+                        _compAI.TakeShot();
+                    }
+                    catch (Exception)
+                    {
+
+                        Debug.WriteLine("[AI] Clicked the same cell twice?");
+                        return;
+                    }
+
+
+                    if (_playerBoard.IsDefeated())
+                    {
+                        gameOver = true;
+                    }
+                    else if (_computerBoard.IsDefeated())
+                    {
+                        gameOver = true;
+
+                    }
+                }
+
+                Debug.WriteLine($"[Game Over] Shots Taken: {_computerBoard.ShotsTaken}");
+
+
+                _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
+                _playerBoard.RandomizeBoard();
+
+                _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
+                _computerBoard.RandomizeBoard();
+
+                _compAI = new ComputerAI(_computerBoard, _playerBoard);
+
+            }
+        }
+
+
         private void shotsBox_Paint(object sender, PaintEventArgs e)
         {
             DrawShotsBoard(e.Graphics, _playerBoard, _computerBoard);
@@ -247,7 +301,6 @@ namespace Battleship
                 return;
             }
 
-
             Task.Delay(500).Wait();
 
             try
@@ -280,9 +333,8 @@ namespace Battleship
 
         private void shotsBox2_MouseClick(object sender, MouseEventArgs e)
         {
-            //_computerBoard.TakeShot(e.Location, _playerBoard);
-            //Debug.WriteLine($"Player defeated: {_playerBoard.IsDefeated()}");
-            //RefreshPlayerBoards();
+            _computerBoard.TakeShot(e.Location, _playerBoard);
+            RefreshPlayerBoards();
         }
 
         private void shipsBox_MouseMove(object sender, MouseEventArgs e)
@@ -336,6 +388,8 @@ namespace Battleship
             WireEvents();
 
             winnerLabel.Visible = false;
+            shipSunkLabel.Visible = false;
+
 
             RefreshPlayerBoards();
         }
