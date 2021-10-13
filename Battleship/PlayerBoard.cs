@@ -35,13 +35,13 @@ namespace Battleship
         public ShipCell[] ShipCells { get { return _shipCells; } }
         public Ship[] Ships { get { return _ships; } }
         public bool PlacingShip { get { return _placingShip; } }
-        public int ShotsTaken 
+        public int ShotsTaken
         {
-            get 
+            get
             {
                 var shots = ShotCells.Where(c => c.HasShot).ToArray();
                 return shots.Length;
-            } 
+            }
         }
 
         public int ShipsSunk
@@ -61,13 +61,28 @@ namespace Battleship
             get
             {
                 var sunk = new List<Ship>();
-                foreach(var ship in _ships)
+                foreach (var ship in _ships)
                 {
                     if (ship.IsSunk)
                         sunk.Add(ship);
                 }
 
                 return sunk.ToArray();
+            }
+        }
+
+        public Ship[] UnSunkShips
+        {
+            get
+            {
+                var ships = new List<Ship>();
+                foreach (var ship in _ships)
+                {
+                    if (!ship.IsSunk)
+                        ships.Add(ship);
+                }
+
+                return ships.ToArray();
             }
         }
 

@@ -31,7 +31,7 @@ namespace Battleship
         private PlayerBoard _computerBoard;
 
         private ComputerAI _compAI;
-
+        private bool _drawCoords = false;
         public Form1()
         {
             InitializeComponent();
@@ -89,13 +89,17 @@ namespace Battleship
 
                 DrawPeg(gfx, cell);
 
-                //// Draw coords.
-                //var center = Helpers.CenterOfPolygon(cell.CellBox);
-                //string label = $"({cell.Column}/{cell.Row})";
-                //var lblSize = gfx.MeasureString(label, _cellCoordFont);
-                //center.X -= (int)(lblSize.Width / 2f);
-                //center.Y -= (int)(lblSize.Height / 2f);
-                //gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
+                if (_drawCoords)
+                {
+                    // Draw coords.
+                    var center = Helpers.CenterOfPolygon(cell.CellBox);
+                    string label = $"({cell.Column}/{cell.Row})";
+                    var lblSize = gfx.MeasureString(label, _cellCoordFont);
+                    center.X -= (int)(lblSize.Width / 2f);
+                    center.Y -= (int)(lblSize.Height / 2f);
+                    gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
+                }
+
             }
         }
 
@@ -115,16 +119,18 @@ namespace Battleship
 
                 DrawPeg(gfx, cell);
 
-                //// Draw coords.
-                //var center = Helpers.CenterOfPolygon(cell.CellBox);
-                //string label = $"({cell.Column}/{cell.Row})";
-                //var lblSize = gfx.MeasureString(label, _cellCoordFont);
-                //center.X -= (int)(lblSize.Width / 2f);
-                //center.Y -= (int)(lblSize.Height / 2f);
-                //gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
+                if (_drawCoords)
+                {
+                    // Draw coords.
+                    var center = Helpers.CenterOfPolygon(cell.CellBox);
+                    string label = $"({cell.Column}/{cell.Row})";
+                    var lblSize = gfx.MeasureString(label, _cellCoordFont);
+                    center.X -= (int)(lblSize.Width / 2f);
+                    center.Y -= (int)(lblSize.Height / 2f);
+                    gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
+                }
             }
         }
-
 
         private void DrawPeg(Graphics gfx, ShotCell cell)
         {
@@ -213,16 +219,29 @@ namespace Battleship
 
         private void StressTest(int its)
         {
-            _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
-            _playerBoard.RandomizeBoard();
+            //_playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
+            //_playerBoard.RandomizeBoard();
 
-            _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
-            _computerBoard.RandomizeBoard();
+            //_computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
+            //_computerBoard.RandomizeBoard();
 
-            _compAI = new ComputerAI(_computerBoard, _playerBoard);
+            //_compAI = new ComputerAI(_computerBoard, _playerBoard);
+
+            var shotsTaken = new List<int>();
+            int best = int.MaxValue;
+            int worst = int.MinValue;
 
             for (int i = 0; i < its; i++)
             {
+                _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
+                _playerBoard.RandomizeBoard();
+
+                _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
+                _computerBoard.RandomizeBoard();
+
+                _compAI = new ComputerAI(_computerBoard, _playerBoard);
+
+
                 bool gameOver = false;
 
                 while (gameOver == false)
@@ -248,22 +267,28 @@ namespace Battleship
                         gameOver = true;
 
                     }
+
+                    //RefreshPlayerBoards();
+                    //Application.DoEvents();
+                    //Task.Delay(20).Wait();
                 }
 
-                Debug.WriteLine($"[Game Over] Shots Taken: {_computerBoard.ShotsTaken}");
+                //Debug.WriteLine($"[Game Over] Shots Taken: {_computerBoard.ShotsTaken}");
+                shotsTaken.Add(_computerBoard.ShotsTaken);
+                best = Math.Min(best, _computerBoard.ShotsTaken);
+                worst = Math.Max(worst, _computerBoard.ShotsTaken);
 
-
-                _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
-                _playerBoard.RandomizeBoard();
-
-                _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
-                _computerBoard.RandomizeBoard();
-
-                _compAI = new ComputerAI(_computerBoard, _playerBoard);
-
+                //Task.Delay(500).Wait();
             }
-        }
 
+            float totShots = 0;
+            foreach (var shots in shotsTaken)
+                totShots += shots;
+
+            float avgShots = totShots / shotsTaken.Count;
+            Debug.WriteLine($"Games: {its} TotShots: {totShots}  AvgShots: {avgShots}  Best: {best}  Worst: {worst}");
+
+        }
 
         private void shotsBox_Paint(object sender, PaintEventArgs e)
         {
@@ -397,6 +422,8 @@ namespace Battleship
         private void hideShowButton_Click(object sender, EventArgs e)
         {
             shipsBox2.Visible = !shipsBox2.Visible;
+            shotsBox2.Visible = !shotsBox2.Visible;
+
         }
 
         private void clearBoardsButton_Click(object sender, EventArgs e)
@@ -436,6 +463,17 @@ namespace Battleship
         {
             shipSunkLabel.Text = $"Computer {e} was sunk!";
             shipSunkLabel.Visible = true;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            StressTest(100);
+        }
+
+        private void drawCoordsCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            _drawCoords = drawCoordsCheckBox.Checked;
+            RefreshPlayerBoards();
         }
     }
 }

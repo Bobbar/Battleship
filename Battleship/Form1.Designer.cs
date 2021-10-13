@@ -43,6 +43,8 @@ namespace Battleship
             this.clearBoardsButton = new System.Windows.Forms.Button();
             this.randomizeComputerButton = new System.Windows.Forms.Button();
             this.shipSunkLabel = new System.Windows.Forms.Label();
+            this.button1 = new System.Windows.Forms.Button();
+            this.drawCoordsCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.shotsBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.shipsBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.shotsBox2)).BeginInit();
@@ -80,6 +82,7 @@ namespace Battleship
             this.shotsBox2.Size = new System.Drawing.Size(400, 400);
             this.shotsBox2.TabIndex = 2;
             this.shotsBox2.TabStop = false;
+            this.shotsBox2.Visible = false;
             this.shotsBox2.Paint += new System.Windows.Forms.PaintEventHandler(this.shotsBox2_Paint);
             this.shotsBox2.MouseClick += new System.Windows.Forms.MouseEventHandler(this.shotsBox2_MouseClick);
             // 
@@ -108,7 +111,7 @@ namespace Battleship
             // 
             // hideShowButton
             // 
-            this.hideShowButton.Location = new System.Drawing.Point(949, 865);
+            this.hideShowButton.Location = new System.Drawing.Point(878, 865);
             this.hideShowButton.Name = "hideShowButton";
             this.hideShowButton.Size = new System.Drawing.Size(99, 20);
             this.hideShowButton.TabIndex = 5;
@@ -167,7 +170,7 @@ namespace Battleship
             // 
             // clearBoardsButton
             // 
-            this.clearBoardsButton.Location = new System.Drawing.Point(349, 885);
+            this.clearBoardsButton.Location = new System.Drawing.Point(537, 885);
             this.clearBoardsButton.Name = "clearBoardsButton";
             this.clearBoardsButton.Size = new System.Drawing.Size(117, 20);
             this.clearBoardsButton.TabIndex = 11;
@@ -198,11 +201,34 @@ namespace Battleship
             this.shipSunkLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.shipSunkLabel.Visible = false;
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(1061, 888);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(80, 26);
+            this.button1.TabIndex = 14;
+            this.button1.Text = "Stress Test";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // drawCoordsCheckBox
+            // 
+            this.drawCoordsCheckBox.AutoSize = true;
+            this.drawCoordsCheckBox.Location = new System.Drawing.Point(255, 885);
+            this.drawCoordsCheckBox.Name = "drawCoordsCheckBox";
+            this.drawCoordsCheckBox.Size = new System.Drawing.Size(87, 17);
+            this.drawCoordsCheckBox.TabIndex = 15;
+            this.drawCoordsCheckBox.Text = "Draw Coords";
+            this.drawCoordsCheckBox.UseVisualStyleBackColor = true;
+            this.drawCoordsCheckBox.CheckedChanged += new System.EventHandler(this.drawCoordsCheckBox_CheckedChanged);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1143, 917);
+            this.Controls.Add(this.drawCoordsCheckBox);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.shipSunkLabel);
             this.Controls.Add(this.randomizeComputerButton);
             this.Controls.Add(this.clearBoardsButton);
@@ -248,6 +274,8 @@ namespace Battleship
         private System.Windows.Forms.Button clearBoardsButton;
         private System.Windows.Forms.Button randomizeComputerButton;
         private System.Windows.Forms.Label shipSunkLabel;
+        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.CheckBox drawCoordsCheckBox;
     }
 }
 

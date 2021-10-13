@@ -17,7 +17,6 @@ namespace Battleship
         private bool _isOnShip = false;
         private ShotCell _lastHit = new ShotCell();
         private ShotCell _firstHit = new ShotCell();
-
         private int _prevShipsSunk = 0;
         private Direction _followDir = Direction.Up;
 
@@ -29,12 +28,16 @@ namespace Battleship
 
         public bool TakeShot()
         {
+            if (_humanBoard.UnSunkShips.Length == 0)
+                return false;
+
             bool wasHit = false;
 
             // Try to find hits from unsunk ships, and set parameters to try to focus on them.
-            LookForUnfinishedBusiness();
+            if (!_directionFound)
+                LookForUnfinishedBusiness();
 
-            // Not on ship, take random shots.
+            // Not on ship, take random shots in areas that could fit any of the remaining ships.
             if (!_isOnShip)
             {
                 var shotCell = GetRandomShot();
@@ -71,7 +74,6 @@ namespace Battleship
                         // Reset and try again.
                         _hitsInARow = 0;
                         _isOnShip = false;
-
                         return TakeShot();
                     }
 
@@ -102,13 +104,15 @@ namespace Battleship
 
                         if (wasHit)
                         {
-                            _lastHit = followShot;
-                            _hitsInARow++;
-
                             if (SunkShip())
                             {
                                 _isOnShip = false;
                                 _hitsInARow = 0;
+                            }
+                            else
+                            {
+                                _lastHit = followShot;
+                                _hitsInARow++;
                             }
                         }
                         else
@@ -142,6 +146,9 @@ namespace Battleship
             return wasHit;
         }
 
+        /// <summary>
+        /// Look for cells with hits on ships that haven't been sunk yet and set parameters to focus on them.
+        /// </summary>
         private void LookForUnfinishedBusiness()
         {
             if (_isOnShip)
@@ -170,16 +177,56 @@ namespace Battleship
                     {
                         // We found a viable cell.
                         // Set the parameters accordingly to force shots around the cell.
+                        _followDir = FindHitDirection(cell);
                         _lastHit = cell;
                         _firstHit = cell;
                         _isOnShip = true;
-                        _hitsInARow = 1;
+                        _hitsInARow = 2;
                         return;
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// Try to find hits on unsunk ships and determine the most likely direction to try next.
+        /// </summary>
+        /// <param name="cell"></param>
+        /// <returns></returns>
+        private Direction FindHitDirection(ShotCell cell)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                var dir = (Direction)i;
+
+                if (CanMoveInDirection(cell, dir))
+                {
+                    var next = GetNextCellInDirection(cell, dir);
+                    foreach (var sunkShip in _humanBoard.SunkShips)
+                    {
+                        if (next != null && next.IsHit && !IsOnSunkShip(next, sunkShip.Cells))
+                        {
+                            // Should we flip or not???
+                            // Doesn't seem to make much of a difference.
+
+                            return dir;
+                            //return Helpers.FlipDirection(dir);
+                        }
+                    }
+                }
+            }
+
+            var dirs = GetAvailableDirections(cell);
+            return dirs[_rnd.Next(0, dirs.Length)];
+
+        }
+
+        /// <summary>
+        /// Is the specified cell on a sunken ship?
+        /// </summary>
+        /// <param name="shotCell"></param>
+        /// <param name="sunkShipCells"></param>
+        /// <returns></returns>
         private bool IsOnSunkShip(ShotCell shotCell, ShipCell[] sunkShipCells)
         {
             bool isOn = false;
@@ -208,28 +255,24 @@ namespace Battleship
             }
         }
 
-
         private ShotCell GetRandomShot()
         {
-            var shotCell = new ShotCell();
-            shotCell.HasShot = true;
+            var possibleCells = GetPossibleShipCells();
+            int rndIdx = _rnd.Next(0, possibleCells.Length);
+            var possibleCell = possibleCells[rndIdx];
+            var shotCell = possibleCell.Cell;
 
-            bool viableShot = false;
-            while (viableShot == false)
-            {
-                int rndIdx = _rnd.Next(0, _board.ShotCells.Length);
-                shotCell = _board.ShotCells[rndIdx];
-
-                // Check available directions and only choose cells which have atleast one open neighbor cell. 
-                // No sense wasting shots on cells that couldn't possibly contain a ship.
-                var dirs = GetAvailableDirections(shotCell);
-                if (!shotCell.HasShot && dirs.Length > 0)
-                    viableShot = true;
-            }
+            // Does this really have an effect?
+            //_followDir = possibleCell.Direction;
 
             return shotCell;
         }
 
+        /// <summary>
+        /// Find all possible directions from the specified cell.
+        /// </summary>
+        /// <param name="cell"></param>
+        /// <returns></returns>
         private Direction[] GetAvailableDirections(ShotCell cell)
         {
             var dirs = new List<Direction>();
@@ -244,18 +287,67 @@ namespace Battleship
             return dirs.ToArray();
         }
 
-
-        private Direction GetNextDirection(Direction direction)
+        /// <summary>
+        /// Find a collection of cells and directions where an unsunken ship could possibly be located.
+        /// </summary>
+        /// <returns></returns>
+        private PossibleShipCell[] GetPossibleShipCells()
         {
-            int dirIdx = (int)direction;
-            if (dirIdx == 3)
-                dirIdx = 0;
-            else
-                dirIdx++;
+            var possibleCells = new List<PossibleShipCell>();
+            var unSunkShips = _humanBoard.UnSunkShips;
+            var emptyCells = _board.ShotCells.Where(cell => cell.HasShot == false).ToArray();
+            foreach (var ship in unSunkShips)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    var dir = (Direction)i;
+                    foreach (var cell in emptyCells)
+                    {
+                        // TODO: This seems to return more cells than expected.....
+                        // It's taking shots in areas too small to contain the last ship.
+                        var cells = GetCellsInDirection(cell, dir);
+                        if (cells.Length >= ship.Length)
+                        {
+                            // If the ship is longer than 3 cells, try to pick a cell in the middle of the group of possible cells.
+                            // That's what I would do... ;)
+                            if (cells.Length >= 3)
+                                possibleCells.Add(new PossibleShipCell(cells[cells.Length / 2], dir));
+                            else
+                                possibleCells.Add(new PossibleShipCell(cell, dir));
+                        }
+                    }
+                }
+            }
 
-            return (Direction)dirIdx;
+            return possibleCells.ToArray();
         }
 
+        /// <summary>
+        /// Find all cells between the specified cell and the next hit/wall in the specified direction.
+        /// </summary>
+        /// <param name="cell"></param>
+        /// <param name="direction"></param>
+        /// <returns></returns>
+        private ShotCell[] GetCellsInDirection(ShotCell cell, Direction direction)
+        {
+            var cells = new List<ShotCell>();
+            var next = cell;
+
+            while (next != null && !next.HasShot)
+            {
+                cells.Add(next);
+                next = GetNextCellInDirection(next, direction);
+            }
+
+            return cells.ToArray();
+        }
+
+        /// <summary>
+        /// Is the next cell in the specified direction possible?
+        /// </summary>
+        /// <param name="currentCell"></param>
+        /// <param name="direction"></param>
+        /// <returns></returns>
         private bool CanMoveInDirection(ShotCell currentCell, Direction direction)
         {
             switch (direction)
@@ -313,6 +405,35 @@ namespace Battleship
             return false;
         }
 
+        //private ShotCell GetNextCellInDirection(ShotCell currentCell, Direction direction)
+        //{
+        //    ShotCell nextCell = null;
+
+        //    var emptyCells = _board.ShotCells.Where(cell => cell.HasShot == false).ToArray();
+
+        //    switch (direction)
+        //    {
+
+        //        case Direction.Down:
+        //            nextCell = Helpers.CellFromCoords(emptyCells, currentCell.Row + 1, currentCell.Column) as ShotCell;
+        //            return nextCell;
+
+        //        case Direction.Up:
+        //            nextCell = Helpers.CellFromCoords(emptyCells, currentCell.Row - 1, currentCell.Column) as ShotCell;
+        //            return nextCell;
+
+        //        case Direction.Left:
+        //            nextCell = Helpers.CellFromCoords(emptyCells, currentCell.Row, currentCell.Column - 1) as ShotCell;
+        //            return nextCell;
+
+        //        case Direction.Right:
+        //            nextCell = Helpers.CellFromCoords(emptyCells, currentCell.Row, currentCell.Column + 1) as ShotCell;
+        //            return nextCell;
+        //    }
+
+        //    return nextCell;
+        //}
+
         private ShotCell GetNextCellInDirection(ShotCell currentCell, Direction direction)
         {
             ShotCell nextCell = null;
@@ -338,6 +459,18 @@ namespace Battleship
             }
 
             return nextCell;
+        }
+    }
+
+    public class PossibleShipCell
+    {
+        public ShotCell Cell { get; set; }
+        public Direction Direction { get; set; }
+
+        public PossibleShipCell(ShotCell cell, Direction direction)
+        {
+            Cell = cell;
+            Direction = direction;
         }
     }
 }
