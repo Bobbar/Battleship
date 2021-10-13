@@ -278,7 +278,7 @@ namespace Battleship
                 best = Math.Min(best, _computerBoard.ShotsTaken);
                 worst = Math.Max(worst, _computerBoard.ShotsTaken);
 
-                //Task.Delay(500).Wait();
+                //Task.Delay(1000).Wait();
             }
 
             float totShots = 0;
@@ -358,7 +358,14 @@ namespace Battleship
 
         private void shotsBox2_MouseClick(object sender, MouseEventArgs e)
         {
-            _computerBoard.TakeShot(e.Location, _playerBoard);
+            try
+            {
+                _computerBoard.TakeShot(e.Location, _playerBoard);
+            }
+            catch
+            {
+
+            }
             RefreshPlayerBoards();
         }
 
@@ -473,6 +480,12 @@ namespace Battleship
         private void drawCoordsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             _drawCoords = drawCoordsCheckBox.Checked;
+            RefreshPlayerBoards();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            _compAI.Test();
             RefreshPlayerBoards();
         }
     }

@@ -284,29 +284,7 @@ namespace Battleship
         {
             var shotCell = Helpers.CellFromPosition(ShotCells, location) as ShotCell;
 
-            if (shotCell.HasShot)
-                throw new Exception("This cell already contains a shot dummy!");
-
-            var shipCell = Helpers.CellFromCoords(otherBoard.ShipCells, shotCell.Row, shotCell.Column) as ShipCell;
-
-            if (shipCell.HasShip)
-            {
-                shipCell.SetHit();
-                shotCell.SetHit();
-
-                if (shipCell.Ship.IsSunk)
-                    OnShipSunk(shipCell.Ship);
-
-                return true;
-
-            }
-            else
-            {
-                shipCell.SetMiss();
-                shotCell.SetMiss();
-                return false;
-            }
-
+            return TakeShot(shotCell, otherBoard);
         }
 
         public bool TakeShot(ShotCell shotCell, PlayerBoard otherBoard)
@@ -322,7 +300,12 @@ namespace Battleship
                 shotCell.SetHit();
 
                 if (shipCell.Ship.IsSunk)
+                {
+                    foreach (var cell in shipCell.Ship.Cells)
+                        _shotCells[cell.Index].IsOnSunkShip = true;
+
                     OnShipSunk(shipCell.Ship);
+                }
 
                 return true;
             }
