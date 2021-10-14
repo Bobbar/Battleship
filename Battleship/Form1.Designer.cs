@@ -46,6 +46,9 @@ namespace Battleship
             this.button1 = new System.Windows.Forms.Button();
             this.drawCoordsCheckBox = new System.Windows.Forms.CheckBox();
             this.button2 = new System.Windows.Forms.Button();
+            this.CompTakeShotButton = new System.Windows.Forms.Button();
+            this.DrawHeatMapCheckBox = new System.Windows.Forms.CheckBox();
+            this.CompVsCompCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.shotsBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.shipsBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.shotsBox2)).BeginInit();
@@ -210,13 +213,12 @@ namespace Battleship
             this.button1.TabIndex = 14;
             this.button1.Text = "Stress Test";
             this.button1.UseVisualStyleBackColor = true;
-            this.button1.Visible = false;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // drawCoordsCheckBox
             // 
             this.drawCoordsCheckBox.AutoSize = true;
-            this.drawCoordsCheckBox.Location = new System.Drawing.Point(255, 885);
+            this.drawCoordsCheckBox.Location = new System.Drawing.Point(269, 868);
             this.drawCoordsCheckBox.Name = "drawCoordsCheckBox";
             this.drawCoordsCheckBox.Size = new System.Drawing.Size(87, 17);
             this.drawCoordsCheckBox.TabIndex = 15;
@@ -226,20 +228,54 @@ namespace Battleship
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(535, 669);
+            this.button2.Location = new System.Drawing.Point(993, 888);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(62, 28);
+            this.button2.Size = new System.Drawing.Size(62, 26);
             this.button2.TabIndex = 16;
             this.button2.Text = "button2";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Visible = false;
             this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
+            // CompTakeShotButton
+            // 
+            this.CompTakeShotButton.Location = new System.Drawing.Point(531, 258);
+            this.CompTakeShotButton.Name = "CompTakeShotButton";
+            this.CompTakeShotButton.Size = new System.Drawing.Size(104, 32);
+            this.CompTakeShotButton.TabIndex = 17;
+            this.CompTakeShotButton.Text = "Comp Take Shot";
+            this.CompTakeShotButton.UseVisualStyleBackColor = true;
+            this.CompTakeShotButton.Click += new System.EventHandler(this.CompTakeShotButton_Click);
+            // 
+            // DrawHeatMapCheckBox
+            // 
+            this.DrawHeatMapCheckBox.AutoSize = true;
+            this.DrawHeatMapCheckBox.Location = new System.Drawing.Point(269, 888);
+            this.DrawHeatMapCheckBox.Name = "DrawHeatMapCheckBox";
+            this.DrawHeatMapCheckBox.Size = new System.Drawing.Size(101, 17);
+            this.DrawHeatMapCheckBox.TabIndex = 18;
+            this.DrawHeatMapCheckBox.Text = "Draw Heat Map";
+            this.DrawHeatMapCheckBox.UseVisualStyleBackColor = true;
+            this.DrawHeatMapCheckBox.CheckedChanged += new System.EventHandler(this.DrawHeatMapCheckBox_CheckedChanged);
+            // 
+            // CompVsCompCheckBox
+            // 
+            this.CompVsCompCheckBox.AutoSize = true;
+            this.CompVsCompCheckBox.Location = new System.Drawing.Point(386, 885);
+            this.CompVsCompCheckBox.Name = "CompVsCompCheckBox";
+            this.CompVsCompCheckBox.Size = new System.Drawing.Size(97, 17);
+            this.CompVsCompCheckBox.TabIndex = 19;
+            this.CompVsCompCheckBox.Text = "Comp vs Comp";
+            this.CompVsCompCheckBox.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1143, 917);
+            this.Controls.Add(this.CompVsCompCheckBox);
+            this.Controls.Add(this.DrawHeatMapCheckBox);
+            this.Controls.Add(this.CompTakeShotButton);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.drawCoordsCheckBox);
             this.Controls.Add(this.button1);
@@ -291,6 +327,9 @@ namespace Battleship
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.CheckBox drawCoordsCheckBox;
         private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Button CompTakeShotButton;
+        private System.Windows.Forms.CheckBox DrawHeatMapCheckBox;
+        private System.Windows.Forms.CheckBox CompVsCompCheckBox;
     }
 }
 

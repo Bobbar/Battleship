@@ -66,7 +66,7 @@ namespace Battleship
             return (Direction)_rnd.Next(0, 4);
         }
 
-        public static Direction FlipDirection(Direction dir)
+        public static Direction? FlipDirection(Direction? dir)
         {
             switch (dir)
             {
@@ -78,9 +78,9 @@ namespace Battleship
                     return Direction.Right;
                 case Direction.Right:
                     return Direction.Left;
+                default:
+                    return dir;
             }
-
-            return dir;
         }
 
         public static Cell GetRandomCell(Cell[] cells)
@@ -168,6 +168,73 @@ namespace Battleship
             path.CloseFigure();
             return path;
         }
+
+
+        public static bool CellsContainIndex(this Cell[] cells, int index)
+        {
+            foreach (var cell in cells)
+                if (cell.Index == index)
+                    return true;
+
+            return false;
+        }
+
+
+        public static Color GetVariableColor(Color startColor, Color midColor, Color endColor, float maxValue, float currentValue, int alpha, bool translucent = false)
+        {
+            float intensity = 0;
+            byte r1, g1, b1, r2, g2, b2;
+            float maxHalf = maxValue * 0.5f;
+
+            if (currentValue <= maxHalf)
+            {
+                r1 = startColor.R;
+                g1 = startColor.G;
+                b1 = startColor.B;
+
+                r2 = midColor.R;
+                g2 = midColor.G;
+                b2 = midColor.B;
+
+                maxValue = maxHalf;
+            }
+            else
+            {
+                r1 = midColor.R;
+                g1 = midColor.G;
+                b1 = midColor.B;
+
+                r2 = endColor.R;
+                g2 = endColor.G;
+                b2 = endColor.B;
+
+                maxValue = maxHalf;
+                currentValue = currentValue - maxValue;
+            }
+
+            if (currentValue > 0)
+            {
+                // Compute the intensity of the end color.
+                intensity = (currentValue / maxValue);
+            }
+
+            intensity = Math.Min(intensity, 1.0f);
+
+            byte newR, newG, newB;
+            newR = (byte)(r1 + (r2 - r1) * intensity);
+            newG = (byte)(g1 + (g2 - g1) * intensity);
+            newB = (byte)(b1 + (b2 - b1) * intensity);
+
+            if (translucent)
+            {
+                return Color.FromArgb(alpha, newR, newG, newB);
+            }
+            else
+            {
+                return Color.FromArgb(newR, newG, newB);
+            }
+        }
+
 
     }
 }

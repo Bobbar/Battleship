@@ -22,8 +22,8 @@ namespace Battleship
         private SolidBrush _invalidShipBrush = new SolidBrush(Color.Yellow);
         private SolidBrush _sunkShipBrush = new SolidBrush(Color.Blue);
         private SolidBrush _emptyPegBrush = new SolidBrush(Color.FromArgb(150, Color.Gray));
-
-        private Font _cellCoordFont = new Font("Tahoma", 5, FontStyle.Regular);
+        private const int _pegSize = 30;
+        private Font _cellCoordFont = new Font("Tahoma", (_pegSize / 3), FontStyle.Regular);
         private Size _boardSize;
         private Random _rnd = new Random();
 
@@ -31,7 +31,13 @@ namespace Battleship
         private PlayerBoard _computerBoard;
 
         private ComputerAI _compAI;
+        private ComputerAI _compAI2;
+
         private bool _drawCoords = false;
+        private bool _drawHeatMap = false;
+        private bool _compVsComp = false;
+
+
         public Form1()
         {
             InitializeComponent();
@@ -50,6 +56,7 @@ namespace Battleship
             _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
 
             _compAI = new ComputerAI(_computerBoard, _playerBoard);
+            _compAI2 = new ComputerAI(_computerBoard, _playerBoard);
             WireEvents();
         }
 
@@ -60,7 +67,6 @@ namespace Battleship
 
             _computerBoard.ShipWasSunk -= _computerBoard_ShipWasSunk;
             _computerBoard.ShipWasSunk += _computerBoard_ShipWasSunk;
-
         }
 
         private Ship[] GetShips()
@@ -74,11 +80,29 @@ namespace Battleship
             return ships.ToArray();
         }
 
+        private void RefreshPlayerBoards()
+        {
+            shotsBox.Invalidate();
+            shipsBox.Invalidate();
+            shotsBox2.Invalidate();
+            shipsBox2.Invalidate();
+
+            shotsBox.Refresh();
+            shipsBox.Refresh();
+            shotsBox2.Refresh();
+            shipsBox2.Refresh();
+
+            playerShipsLabel.Text = $"Ships ({5 - _playerBoard.ShipsSunk}/5)";
+            computerShipsLabel.Text = $"Ships ({5 - _computerBoard.ShipsSunk}/5)";
+            playerShotsLabel.Text = $"Shots Taken: {_playerBoard.ShotsTaken}";
+            computerShotsLabel.Text = $"Shots Taken: {_computerBoard.ShotsTaken}";
+        }
+
+
         private void DrawShotsBoard(Graphics gfx, PlayerBoard board, PlayerBoard otherBoard)
         {
             gfx.SmoothingMode = SmoothingMode.HighQuality;
             gfx.Clear(shotsBox.BackColor);
-
 
             foreach (var ship in otherBoard.Ships)
                 DrawShip(gfx, ship, true);
@@ -100,6 +124,27 @@ namespace Battleship
                     gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
                 }
 
+            }
+        }
+
+        private void DrawHeatMap(Graphics gfx, Cell[] cells)
+        {
+            int max = int.MinValue;
+
+            foreach (var c in cells)
+                max = Math.Max(max, c.Rank);
+
+            foreach (var cell in cells)
+            {
+                var center = Helpers.CenterOfPolygon(cell.CellBox);
+                var probColor = Helpers.GetVariableColor(Color.Blue, Color.Red, Color.Yellow, max, cell.Rank, 255, true);
+                gfx.FillEllipse(new SolidBrush(probColor), center.X - _pegSize / 2, center.Y - _pegSize / 2, _pegSize, _pegSize);
+
+                string label = $"{cell.Rank}";
+                var lblSize = gfx.MeasureString(label, _cellCoordFont);
+                center.X -= (int)(lblSize.Width / 2f);
+                center.Y -= (int)(lblSize.Height / 2f);
+                gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
             }
         }
 
@@ -134,27 +179,26 @@ namespace Battleship
 
         private void DrawPeg(Graphics gfx, ShotCell cell)
         {
-            const int pegSize = 15;
             var center = Helpers.CenterOfPolygon(cell.CellBox);
-            center.X -= pegSize / 2;
-            center.Y -= pegSize / 2;
+            center.X -= _pegSize / 2;
+            center.Y -= _pegSize / 2;
 
             if (cell.IsHit)
             {
-                gfx.DrawEllipse(Pens.Black, center.X, center.Y, pegSize, pegSize);
-                gfx.FillEllipse(_hitBrush, center.X, center.Y, pegSize, pegSize);
+                gfx.DrawEllipse(Pens.Black, center.X, center.Y, _pegSize, _pegSize);
+                gfx.FillEllipse(_hitBrush, center.X, center.Y, _pegSize, _pegSize);
                 return;
             }
 
             if (cell.HasShot)
             {
-                gfx.DrawEllipse(Pens.Black, center.X, center.Y, pegSize, pegSize);
-                gfx.FillEllipse(_missBrush, center.X, center.Y, pegSize, pegSize);
+                gfx.DrawEllipse(Pens.Black, center.X, center.Y, _pegSize, _pegSize);
+                gfx.FillEllipse(_missBrush, center.X, center.Y, _pegSize, _pegSize);
             }
             else
             {
-                gfx.DrawEllipse(Pens.Black, center.X, center.Y, pegSize, pegSize);
-                gfx.FillEllipse(_emptyPegBrush, center.X, center.Y, pegSize, pegSize);
+                gfx.DrawEllipse(Pens.Black, center.X, center.Y, _pegSize, _pegSize);
+                gfx.FillEllipse(_emptyPegBrush, center.X, center.Y, _pegSize, _pegSize);
             }
 
         }
@@ -199,23 +243,6 @@ namespace Battleship
                 return false;
         }
 
-        private void RefreshPlayerBoards()
-        {
-            shotsBox.Invalidate();
-            shipsBox.Invalidate();
-            shotsBox2.Invalidate();
-            shipsBox2.Invalidate();
-
-            shotsBox.Refresh();
-            shipsBox.Refresh();
-            shotsBox2.Refresh();
-            shipsBox2.Refresh();
-
-            playerShipsLabel.Text = $"Ships ({5 - _playerBoard.ShipsSunk}/5)";
-            computerShipsLabel.Text = $"Ships ({5 - _computerBoard.ShipsSunk}/5)";
-            playerShotsLabel.Text = $"Shots Taken: {_playerBoard.ShotsTaken}";
-            computerShotsLabel.Text = $"Shots Taken: {_computerBoard.ShotsTaken}";
-        }
 
         private void StressTest(int its)
         {
@@ -270,7 +297,7 @@ namespace Battleship
 
                     //RefreshPlayerBoards();
                     //Application.DoEvents();
-                    //Task.Delay(20).Wait();
+                    //Task.Delay(50).Wait();
                 }
 
                 //Debug.WriteLine($"[Game Over] Shots Taken: {_computerBoard.ShotsTaken}");
@@ -278,7 +305,7 @@ namespace Battleship
                 best = Math.Min(best, _computerBoard.ShotsTaken);
                 worst = Math.Max(worst, _computerBoard.ShotsTaken);
 
-                //Task.Delay(1000).Wait();
+                //Task.Delay(2000).Wait();
             }
 
             float totShots = 0;
@@ -293,6 +320,9 @@ namespace Battleship
         private void shotsBox_Paint(object sender, PaintEventArgs e)
         {
             DrawShotsBoard(e.Graphics, _playerBoard, _computerBoard);
+
+            if (_drawHeatMap && _compVsComp)
+                DrawHeatMap(e.Graphics, _compAI2.ShipProbabilityHeatMap());
         }
 
         private void shipsBox_Paint(object sender, PaintEventArgs e)
@@ -303,6 +333,9 @@ namespace Battleship
         private void shotsBox2_Paint(object sender, PaintEventArgs e)
         {
             DrawShotsBoard(e.Graphics, _computerBoard, _playerBoard);
+
+            if (_drawHeatMap)
+                DrawHeatMap(e.Graphics, _compAI.ShipProbabilityHeatMap());
 
         }
 
@@ -416,6 +449,8 @@ namespace Battleship
             _computerBoard.RandomizeBoard();
 
             _compAI = new ComputerAI(_computerBoard, _playerBoard);
+            if (_compVsComp)
+                _compAI2 = new ComputerAI(_playerBoard, _computerBoard);
 
             WireEvents();
 
@@ -437,7 +472,10 @@ namespace Battleship
         {
             _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
             _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
+
             _compAI = new ComputerAI(_computerBoard, _playerBoard);
+            if (_compVsComp)
+                _compAI2 = new ComputerAI(_playerBoard, _computerBoard);
 
             WireEvents();
 
@@ -451,7 +489,10 @@ namespace Battleship
         {
             _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
             _computerBoard.RandomizeBoard();
+            
             _compAI = new ComputerAI(_computerBoard, _playerBoard);
+            if (_compVsComp)
+                _compAI2 = new ComputerAI(_playerBoard, _computerBoard);
 
             WireEvents();
 
@@ -474,7 +515,7 @@ namespace Battleship
 
         private void button1_Click(object sender, EventArgs e)
         {
-            StressTest(100);
+            StressTest(500);
         }
 
         private void drawCoordsCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -483,10 +524,64 @@ namespace Battleship
             RefreshPlayerBoards();
         }
 
+        private void DrawHeatMapCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            _drawHeatMap = DrawHeatMapCheckBox.Checked;
+            RefreshPlayerBoards();
+        }
+
         private void button2_Click(object sender, EventArgs e)
         {
             _compAI.Test();
             RefreshPlayerBoards();
+        }
+
+        private void CompTakeShotButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                _compAI.TakeShot();
+                RefreshPlayerBoards();
+            }
+            catch (Exception)
+            {
+
+                Debug.WriteLine("[AI] Clicked the same cell twice?");
+                return;
+            }
+
+            if (_compVsComp)
+            {
+                Task.Delay(500).Wait();
+
+                try
+                {
+                    _compAI2.TakeShot();
+                    RefreshPlayerBoards();
+                }
+                catch (Exception)
+                {
+
+                    Debug.WriteLine("[AI] Clicked the same cell twice?");
+                    return;
+                }
+            }
+
+
+            if (_playerBoard.IsDefeated())
+            {
+                winnerLabel.Text = "Computer player wins!!!";
+                winnerLabel.Visible = true;
+            }
+            else if (_computerBoard.IsDefeated())
+            {
+                winnerLabel.Text = "Player 1 wins!!!";
+                winnerLabel.Visible = true;
+            }
+            else if (!_playerBoard.IsDefeated() && !_computerBoard.IsDefeated())
+            {
+                winnerLabel.Visible = false;
+            }
         }
     }
 }

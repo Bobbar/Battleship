@@ -55,6 +55,7 @@
     </Compile>
     <Compile Include="Helpers.cs" />
     <Compile Include="PlayerBoard.cs" />
+    <Compile Include="BoardAnalyzer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Ship.cs" />
