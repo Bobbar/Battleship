@@ -23,7 +23,9 @@ namespace Battleship
         private SolidBrush _sunkShipBrush = new SolidBrush(Color.Blue);
         private SolidBrush _emptyPegBrush = new SolidBrush(Color.FromArgb(150, Color.Gray));
         private const int _pegSize = 30;
-        private Font _cellCoordFont = new Font("Tahoma", (_pegSize / 3), FontStyle.Regular);
+        //private Font _cellCoordFont = new Font("Tahoma", (_pegSize / 3), FontStyle.Regular);
+        private Font _cellCoordFont = new Font("Tahoma", 10, FontStyle.Regular);
+
         private Size _boardSize;
         private Random _rnd = new Random();
 
@@ -36,7 +38,6 @@ namespace Battleship
         private bool _drawCoords = false;
         private bool _drawHeatMap = false;
         private bool _compVsComp = false;
-
 
         public Form1()
         {
@@ -140,11 +141,24 @@ namespace Battleship
                 var probColor = Helpers.GetVariableColor(Color.Blue, Color.Red, Color.Yellow, max, cell.Rank, 255, true);
                 gfx.FillEllipse(new SolidBrush(probColor), center.X - _pegSize / 2, center.Y - _pegSize / 2, _pegSize, _pegSize);
 
-                string label = $"{cell.Rank}";
-                var lblSize = gfx.MeasureString(label, _cellCoordFont);
-                center.X -= (int)(lblSize.Width / 2f);
-                center.Y -= (int)(lblSize.Height / 2f);
-                gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
+                if (_drawCoords)
+                {
+                    string label = $"{cell.Rank}";
+                    var lblSize = gfx.MeasureString(label, _cellCoordFont);
+                    gfx.DrawString(label, _cellCoordFont, Brushes.Black, center.X - (int)(lblSize.Width / 2f), center.Y - (int)(lblSize.Height));
+
+                    label = $"({cell.Column}/{cell.Row})";
+                    lblSize = gfx.MeasureString(label, _cellCoordFont);
+                    gfx.DrawString(label, _cellCoordFont, Brushes.Black, center.X - (int)(lblSize.Width / 2f), center.Y);
+                }
+                else
+                {
+                    string label = $"{cell.Rank}";
+                    var lblSize = gfx.MeasureString(label, _cellCoordFont);
+                    center.X -= (int)(lblSize.Width / 2f);
+                    center.Y -= (int)(lblSize.Height / 2f);
+                    gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
+                }
             }
         }
 
@@ -200,7 +214,6 @@ namespace Battleship
                 gfx.DrawEllipse(Pens.Black, center.X, center.Y, _pegSize, _pegSize);
                 gfx.FillEllipse(_emptyPegBrush, center.X, center.Y, _pegSize, _pegSize);
             }
-
         }
 
         private void DrawShip(Graphics gfx, Ship ship, bool shotBoard = false)
@@ -258,6 +271,9 @@ namespace Battleship
             int best = int.MaxValue;
             int worst = int.MinValue;
 
+            var timer = new System.Diagnostics.Stopwatch();
+            timer.Restart();
+
             for (int i = 0; i < its; i++)
             {
                 _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
@@ -304,9 +320,12 @@ namespace Battleship
                 shotsTaken.Add(_computerBoard.ShotsTaken);
                 best = Math.Min(best, _computerBoard.ShotsTaken);
                 worst = Math.Max(worst, _computerBoard.ShotsTaken);
-
                 //Task.Delay(2000).Wait();
             }
+
+            timer.Stop();
+            System.Diagnostics.Debug.WriteLine(string.Format("Timer: {0} ms  {1} ticks", timer.Elapsed.TotalMilliseconds, timer.Elapsed.Ticks));
+
 
             float totShots = 0;
             foreach (var shots in shotsTaken)
@@ -314,7 +333,7 @@ namespace Battleship
 
             float avgShots = totShots / shotsTaken.Count;
             Debug.WriteLine($"Games: {its} TotShots: {totShots}  AvgShots: {avgShots}  Best: {best}  Worst: {worst}");
-
+            RefreshPlayerBoards();
         }
 
         private void shotsBox_Paint(object sender, PaintEventArgs e)
@@ -489,7 +508,7 @@ namespace Battleship
         {
             _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
             _computerBoard.RandomizeBoard();
-            
+
             _compAI = new ComputerAI(_computerBoard, _playerBoard);
             if (_compVsComp)
                 _compAI2 = new ComputerAI(_playerBoard, _computerBoard);
@@ -515,7 +534,7 @@ namespace Battleship
 
         private void button1_Click(object sender, EventArgs e)
         {
-            StressTest(500);
+            StressTest(1000);
         }
 
         private void drawCoordsCheckBox_CheckedChanged(object sender, EventArgs e)

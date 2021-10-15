@@ -24,11 +24,33 @@ namespace Battleship
         public Point Location { get { return Helpers.CenterOfPolygon(CellBox); } }
         public int Rank { get; set; }
 
-
         public override string ToString()
         {
             return $"({Column},{Row})";
         }
+
+        public bool IsNextToCell(Cell cell)
+        {
+            if (Math.Abs(Column - cell.Column) == 1 || Math.Abs(Row - cell.Row) == 1)
+                return true;
+
+            return false;
+        }
+
+        public Direction DirectionTo(Cell cell)
+        {
+            if (Row < cell.Row)
+                return Direction.Up;
+            else if (Row > cell.Row)
+                return Direction.Down;
+            else if (Column < cell.Column)
+                return Direction.Right;
+            else if (Column > cell.Column)
+                return Direction.Left;
+
+            return Direction.Down;
+        }
+
     }
 
     public class ShotCell : Cell

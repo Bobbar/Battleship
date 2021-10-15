@@ -38,10 +38,10 @@ namespace Battleship
             if (HasUnSunkHits() && !_directionFound)
                 LookForUnSunkHits();
 
-            // Not on ship, take random shots in areas that could fit any of the remaining ships.
+            // Not on ship, take shots in areas with the highest probability of containing a ship.
             if (!_isOnShip)
             {
-                var shotCell = GetRandomShot();
+                var shotCell = GetNextShot();
                 wasHit = _board.TakeShot(shotCell, _humanBoard);
 
                 if (wasHit)
@@ -98,10 +98,8 @@ namespace Battleship
                 {
 
                     // Make sure we can keep moving in the current direction.
-                    if (_boardAnalyzer.CanMoveInDirection(_lastHit, _followDir))
+                    if (_boardAnalyzer.TryGetNextCellInDirection(_lastHit, _followDir, false, out ShotCell followShot))
                     {
-                        // Take the next shot.
-                        var followShot = _boardAnalyzer.GetNextCellInDirection(_lastHit, _followDir);
                         wasHit = _board.TakeShot(followShot, _humanBoard);
 
                         if (wasHit)
@@ -146,20 +144,18 @@ namespace Battleship
             return wasHit;
         }
 
-        private bool HasUnSunkHits()
-        {
-            foreach (var shot in _board.ShotCells)
-            {
-                if (shot.IsHit && !shot.IsOnSunkShip)
-                    return true;
-            }
-
-            return false;
-        }
-
         public ShotCell[] ShipProbabilityHeatMap()
         {
             return _boardAnalyzer.ComputeProbabilityHeatMap(_isOnShip ? _lastHit : null);
+        }
+
+        private bool HasUnSunkHits()
+        {
+            var unsunkHits = _board.ShotCells.Where(c => c.IsHit && !c.IsOnSunkShip);
+            if (unsunkHits.Count() > 0)
+                return true;
+
+            return false;
         }
 
         private void LookForUnSunkHits()
@@ -167,11 +163,10 @@ namespace Battleship
             if (_isOnShip)
                 return;
 
-            var sunkShips = _humanBoard.SunkShips;
+            var unsunkHits = _board.ShotCells.Where(c => c.IsHit && !c.IsOnSunkShip).ToArray();
 
-            foreach (var cell in _board.ShotCells.Where(c => c.IsHit && !c.IsOnSunkShip))
+            foreach (var cell in unsunkHits)
             {
-
                 var bestDir = GetBestDirectionFromHeatMap(cell);
 
                 if (bestDir != null)
@@ -201,24 +196,11 @@ namespace Battleship
             }
         }
 
-        private ShotCell GetRandomShot()
+        private ShotCell GetNextShot()
         {
             var allCells = ShipProbabilityHeatMap();
             var cells = allCells.AsEnumerable().Where(c => c.HasShot == false).OrderBy(c => c.Rank).ToArray();
-
-            int maxRank = int.MinValue;
-            foreach (var cell in cells)
-                maxRank = Math.Max(maxRank, cell.Rank);
-
-            var maxRankCells = new List<ShotCell>();
-            foreach (var cell in cells)
-                if (cell.Rank == maxRank)
-                    maxRankCells.Add(cell);
-
-            int rndIdx = _rnd.Next(0, maxRankCells.Count);
-            return maxRankCells[rndIdx];
-
-            //return cells.Last();
+            return cells.Last();
         }
 
         private Direction? GetBestDirectionFromHeatMap(ShotCell cell)
@@ -232,10 +214,8 @@ namespace Battleship
             for (int i = 0; i < 4; i++)
             {
                 var dir = (Direction)i;
-                if (_boardAnalyzer.CanMoveInDirection(cell, dir))
+                if (_boardAnalyzer.TryGetNextCellInDirection(cell, dir, false, out ShotCell next))
                 {
-                    var next =  _boardAnalyzer.GetNextCellInDirection(cell, dir);
-
                     foreach (var c in heatMap)
                     {
                         if (c.Index == next.Index)
@@ -255,8 +235,6 @@ namespace Battleship
             else
                 return null;
         }
-
-       
 
         public void Test()
         {

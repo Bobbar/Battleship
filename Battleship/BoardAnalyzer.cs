@@ -41,8 +41,8 @@ namespace Battleship
             {
                 foreach (var ship in _opponentBoard.UnSunkShips)
                 {
-                    for (int d = 0; d < 4; d++)
-                    //for (int d = 1; d <= 2; d++) // Does it really make a difference to only compute for vertical & horizontal directions?
+                    //for (int d = 0; d < 4; d++)
+                    for (int d = 1; d <= 2; d++) // Does it really make a difference to only compute for vertical & horizontal directions?
                     {
                         var dir = (Direction)d;
 
@@ -72,6 +72,18 @@ namespace Battleship
             }
 
             return cells.Values.ToArray();
+        }
+
+        public bool TryGetNextCellInDirection(ShotCell currentCell, Direction? direction, bool ignoreShots, out ShotCell nextCell)
+        {
+            if (CanMoveInDirection(currentCell, direction, ignoreShots))
+            {
+                nextCell = GetNextCellInDirection(currentCell, direction);
+                return true;
+            }
+
+            nextCell = null;
+            return false;
         }
 
         public ShotCell GetNextCellInDirection(ShotCell currentCell, Direction? direction)
@@ -174,11 +186,7 @@ namespace Battleship
             var next = cell;
             for (int i = 0; i < ship.Length - 1; i++)
             {
-                if (!CanMoveInDirection(next, direction, ignoreShots: true))
-                    return false;
-
-                next = GetNextCellInDirection(next, direction);
-                if (next == null)
+                if (!TryGetNextCellInDirection(next, direction, ignoreShots: true, out next))
                     return false;
 
                 if (next.HasShot && next.IsOnSunkShip)
@@ -200,14 +208,9 @@ namespace Battleship
             while (next != null && count < num)
             {
                 cells.Add(next);
-                if (CanMoveInDirection(next, direction, ignoreShots: true))
-                {
-                    next = GetNextCellInDirection(next, direction);
-                }
-                else
-                {
+
+                if (!TryGetNextCellInDirection(next, direction, ignoreShots: true, out next))
                     break;
-                }
 
                 count++;
             }
