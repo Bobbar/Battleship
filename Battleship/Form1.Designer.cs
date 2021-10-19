@@ -246,6 +246,7 @@ namespace Battleship
             this.CompTakeShotButton.Text = "Comp Take Shot";
             this.CompTakeShotButton.UseVisualStyleBackColor = true;
             this.CompTakeShotButton.Click += new System.EventHandler(this.CompTakeShotButton_Click);
+            this.CompTakeShotButton.KeyDown += new System.Windows.Forms.KeyEventHandler(this.CompTakeShotButton_KeyDown);
             // 
             // DrawHeatMapCheckBox
             // 

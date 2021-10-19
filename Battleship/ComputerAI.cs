@@ -19,7 +19,7 @@ namespace Battleship
         private int _prevShipsSunk = 0;
         private Direction? _followDir = Direction.Up;
         private BoardAnalyzer _boardAnalyzer;
-
+      
         public ComputerAI(PlayerBoard board, PlayerBoard humanBoard)
         {
             _board = board;
@@ -144,9 +144,13 @@ namespace Battleship
             return wasHit;
         }
 
-        public ShotCell[] ShipProbabilityHeatMap()
+        public ShotCell[] ShipProbabilityHeatMap(bool focusShip = true)
         {
-            return _boardAnalyzer.ComputeProbabilityHeatMap(_isOnShip ? _lastHit : null);
+            if (focusShip)
+                return _boardAnalyzer.ComputeProbabilityHeatMap(_isOnShip ? _lastHit : null);
+            else
+                return _boardAnalyzer.ComputeProbabilityHeatMap(null);
+
         }
 
         private bool HasUnSunkHits()
@@ -200,13 +204,31 @@ namespace Battleship
         {
             var allCells = ShipProbabilityHeatMap();
             var cells = allCells.AsEnumerable().Where(c => c.HasShot == false).OrderBy(c => c.Rank).ToArray();
-            return cells.Last();
+
+            // Find the max rank, and include only cells matching the max rank.
+            var maxRank = cells.Max(c => c.Rank);
+            cells = cells.Where(c => c.Rank == maxRank).ToArray();
+
+            // Pick a random cell.
+            int rndIdx = _rnd.Next(cells.Length);
+
+            return cells[rndIdx];
         }
 
         private Direction? GetBestDirectionFromHeatMap(ShotCell cell)
         {
-            var heatMap = ShipProbabilityHeatMap();
+            var heatMap = ShipProbabilityHeatMap(focusShip: true); // Get probabilities for ships at the current ship cell.
+            var heatMapAll = ShipProbabilityHeatMap(focusShip: false); // All other probabilities.
+
+            // Filter out sunk ship cells.
             heatMap = heatMap.AsEnumerable().Where(c => !c.IsOnSunkShip).ToArray();
+            heatMapAll = heatMapAll.AsEnumerable().Where(c => !c.IsOnSunkShip).ToArray();
+
+            // Overlay ranks from all cells so that the decision is influenced by the current board state.
+            for (int i = 0; i < heatMap.Length; i++)
+            {
+                heatMap[i].Rank += heatMapAll[i].Rank;
+            }
 
             int bestRank = int.MinValue;
             Direction bestDirection = Direction.Down;

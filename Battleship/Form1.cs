@@ -124,7 +124,6 @@ namespace Battleship
                     center.Y -= (int)(lblSize.Height / 2f);
                     gfx.DrawString(label, _cellCoordFont, Brushes.Black, center);
                 }
-
             }
         }
 
@@ -140,7 +139,6 @@ namespace Battleship
                 var center = Helpers.CenterOfPolygon(cell.CellBox);
                 var probColor = Helpers.GetVariableColor(Color.Blue, Color.Red, Color.Yellow, max, cell.Rank, 255, true);
                 gfx.FillEllipse(new SolidBrush(probColor), center.X - _pegSize / 2, center.Y - _pegSize / 2, _pegSize, _pegSize);
-
                 if (_drawCoords)
                 {
                     string label = $"{cell.Rank}";
@@ -246,16 +244,74 @@ namespace Battleship
 
         }
 
-        private bool RandomHit()
+        private void TakeComputerShot()
         {
-            var num = _rnd.Next(0, 2);
+            try
+            {
+                _compAI.TakeShot();
+                RefreshPlayerBoards();
+            }
+            catch (Exception)
+            {
 
-            if (num == 1)
-                return true;
-            else
-                return false;
+                Debug.WriteLine("[AI] Clicked the same cell twice?");
+                return;
+            }
+
+            if (_compVsComp)
+            {
+                Task.Delay(500).Wait();
+
+                try
+                {
+                    _compAI2.TakeShot();
+                    RefreshPlayerBoards();
+                }
+                catch (Exception)
+                {
+
+                    Debug.WriteLine("[AI] Clicked the same cell twice?");
+                    return;
+                }
+            }
+
+
+            if (_playerBoard.IsDefeated())
+            {
+                winnerLabel.Text = "Computer player wins!!!";
+                winnerLabel.Visible = true;
+            }
+            else if (_computerBoard.IsDefeated())
+            {
+                winnerLabel.Text = "Player 1 wins!!!";
+                winnerLabel.Visible = true;
+            }
+            else if (!_playerBoard.IsDefeated() && !_computerBoard.IsDefeated())
+            {
+                winnerLabel.Visible = false;
+            }
         }
 
+        private void RandomizeBoards()
+        {
+            _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
+            _playerBoard.RandomizeBoard();
+
+            _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
+            _computerBoard.RandomizeBoard();
+
+            _compAI = new ComputerAI(_computerBoard, _playerBoard);
+            if (_compVsComp)
+                _compAI2 = new ComputerAI(_playerBoard, _computerBoard);
+
+            WireEvents();
+
+            winnerLabel.Visible = false;
+            shipSunkLabel.Visible = false;
+
+
+            RefreshPlayerBoards();
+        }
 
         private void StressTest(int its)
         {
@@ -274,65 +330,82 @@ namespace Battleship
             var timer = new System.Diagnostics.Stopwatch();
             timer.Restart();
 
-            for (int i = 0; i < its; i++)
+            using (var shotsImg = new Bitmap(shotsBox.Width, shotsBox.Height))
+            using (var shotGfx = Graphics.FromImage(shotsImg))
             {
-                _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
-                _playerBoard.RandomizeBoard();
 
-                _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
-                _computerBoard.RandomizeBoard();
-
-                _compAI = new ComputerAI(_computerBoard, _playerBoard);
-
-
-                bool gameOver = false;
-
-                while (gameOver == false)
+                for (int i = 0; i < its; i++)
                 {
-                    try
+                    _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
+                    _playerBoard.RandomizeBoard();
+
+                    _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
+                    _computerBoard.RandomizeBoard();
+
+                    _compAI = new ComputerAI(_computerBoard, _playerBoard);
+
+
+                    bool gameOver = false;
+
+                    while (gameOver == false)
                     {
-                        _compAI.TakeShot();
+                        try
+                        {
+                            _compAI.TakeShot();
+                        }
+                        catch (Exception)
+                        {
+
+                            Debug.WriteLine("[AI] Clicked the same cell twice?");
+                            return;
+                        }
+
+
+                        if (_playerBoard.IsDefeated())
+                        {
+                            gameOver = true;
+                        }
+                        else if (_computerBoard.IsDefeated())
+                        {
+                            gameOver = true;
+
+                        }
+
+                        //RefreshPlayerBoards();
+                        //Application.DoEvents();
+                        //Task.Delay(50).Wait();
                     }
-                    catch (Exception)
-                    {
 
-                        Debug.WriteLine("[AI] Clicked the same cell twice?");
-                        return;
-                    }
+                    //Debug.WriteLine($"[Game Over] Shots Taken: {_computerBoard.ShotsTaken}");
+                    shotsTaken.Add(_computerBoard.ShotsTaken);
+                    best = Math.Min(best, _computerBoard.ShotsTaken);
 
+                    //if (_computerBoard.ShotsTaken > worst)
+                    //{
+                    //    //DrawShotsBoard(shotGfx, _computerBoard, _playerBoard);
+                    //    DrawShipsBoard(shotGfx, _playerBoard);
 
-                    if (_playerBoard.IsDefeated())
-                    {
-                        gameOver = true;
-                    }
-                    else if (_computerBoard.IsDefeated())
-                    {
-                        gameOver = true;
+                    //    shotsImg.Save($@"C:\Temp\Boards\worst_{i}_{_computerBoard.ShotsTaken}.bmp");
+                    //}
 
-                    }
-
-                    //RefreshPlayerBoards();
-                    //Application.DoEvents();
-                    //Task.Delay(50).Wait();
+                    worst = Math.Max(worst, _computerBoard.ShotsTaken);
+                    //Task.Delay(2000).Wait();
                 }
 
-                //Debug.WriteLine($"[Game Over] Shots Taken: {_computerBoard.ShotsTaken}");
-                shotsTaken.Add(_computerBoard.ShotsTaken);
-                best = Math.Min(best, _computerBoard.ShotsTaken);
-                worst = Math.Max(worst, _computerBoard.ShotsTaken);
-                //Task.Delay(2000).Wait();
+                timer.Stop();
+                System.Diagnostics.Debug.WriteLine(string.Format("Timer: {0} ms  {1} ticks", timer.Elapsed.TotalMilliseconds, timer.Elapsed.Ticks));
+
+
+                float totShots = 0;
+                foreach (var shots in shotsTaken)
+                    totShots += shots;
+
+                float avgShots = totShots / shotsTaken.Count;
+                Debug.WriteLine($"Games: {its} TotShots: {totShots}  AvgShots: {avgShots}  Best: {best}  Worst: {worst}");
+
+
             }
 
-            timer.Stop();
-            System.Diagnostics.Debug.WriteLine(string.Format("Timer: {0} ms  {1} ticks", timer.Elapsed.TotalMilliseconds, timer.Elapsed.Ticks));
-
-
-            float totShots = 0;
-            foreach (var shots in shotsTaken)
-                totShots += shots;
-
-            float avgShots = totShots / shotsTaken.Count;
-            Debug.WriteLine($"Games: {its} TotShots: {totShots}  AvgShots: {avgShots}  Best: {best}  Worst: {worst}");
             RefreshPlayerBoards();
         }
 
@@ -355,7 +428,6 @@ namespace Battleship
 
             if (_drawHeatMap)
                 DrawHeatMap(e.Graphics, _compAI.ShipProbabilityHeatMap());
-
         }
 
         private void shipsBox2_Paint(object sender, PaintEventArgs e)
@@ -461,23 +533,7 @@ namespace Battleship
 
         private void randomizeButton_Click(object sender, EventArgs e)
         {
-            _playerBoard = new PlayerBoard(_boardSize, GetShips(), 1);
-            _playerBoard.RandomizeBoard();
-
-            _computerBoard = new PlayerBoard(_boardSize, GetShips(), 2);
-            _computerBoard.RandomizeBoard();
-
-            _compAI = new ComputerAI(_computerBoard, _playerBoard);
-            if (_compVsComp)
-                _compAI2 = new ComputerAI(_playerBoard, _computerBoard);
-
-            WireEvents();
-
-            winnerLabel.Visible = false;
-            shipSunkLabel.Visible = false;
-
-
-            RefreshPlayerBoards();
+            RandomizeBoards();
         }
 
         private void hideShowButton_Click(object sender, EventArgs e)
@@ -534,7 +590,7 @@ namespace Battleship
 
         private void button1_Click(object sender, EventArgs e)
         {
-            StressTest(1000);
+            StressTest(500);
         }
 
         private void drawCoordsCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -557,49 +613,19 @@ namespace Battleship
 
         private void CompTakeShotButton_Click(object sender, EventArgs e)
         {
-            try
+            TakeComputerShot();
+        }
+
+        private void CompTakeShotButton_KeyDown(object sender, KeyEventArgs e)
+        {
+
+            if (e.KeyCode == Keys.S)
             {
-                _compAI.TakeShot();
-                RefreshPlayerBoards();
+                TakeComputerShot();
             }
-            catch (Exception)
+            else if (e.KeyCode == Keys.N)
             {
-
-                Debug.WriteLine("[AI] Clicked the same cell twice?");
-                return;
-            }
-
-            if (_compVsComp)
-            {
-                Task.Delay(500).Wait();
-
-                try
-                {
-                    _compAI2.TakeShot();
-                    RefreshPlayerBoards();
-                }
-                catch (Exception)
-                {
-
-                    Debug.WriteLine("[AI] Clicked the same cell twice?");
-                    return;
-                }
-            }
-
-
-            if (_playerBoard.IsDefeated())
-            {
-                winnerLabel.Text = "Computer player wins!!!";
-                winnerLabel.Visible = true;
-            }
-            else if (_computerBoard.IsDefeated())
-            {
-                winnerLabel.Text = "Player 1 wins!!!";
-                winnerLabel.Visible = true;
-            }
-            else if (!_playerBoard.IsDefeated() && !_computerBoard.IsDefeated())
-            {
-                winnerLabel.Visible = false;
+                RandomizeBoards();
             }
         }
     }
