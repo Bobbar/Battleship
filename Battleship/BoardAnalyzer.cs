@@ -41,15 +41,14 @@ namespace Battleship
             {
                 foreach (var ship in _opponentBoard.UnSunkShips)
                 {
-                    //for (int d = 0; d < 4; d++)
-                    for (int d = 1; d <= 2; d++) // Does it really make a difference to only compute for vertical & horizontal directions?
+                    for (int d = 0; d < 4; d++)
+                    //for (int d = 1; d <= 2; d++) // Does it really make a difference to only compute for vertical & horizontal directions?
                     {
                         var dir = (Direction)d;
 
                         if (ShipCanFit(shotCell, ship, dir))
                         {
                             var shipCells = GetCellsInDirectionConstrained(shotCell, dir, ship.Length);
-                            Debug.Assert(shipCells.Length == ship.Length);
 
                             if (focusCell != null && shipCells.CellsContainIndex(focusCell.Index))
                             {
@@ -65,7 +64,6 @@ namespace Battleship
                                     cells[shipCell.Index].Rank++;
                                 }
                             }
-
                         }
                     }
                 }
@@ -110,6 +108,19 @@ namespace Battleship
             }
 
             return nextCell;
+        }
+
+        public bool IsSurrounded(ShotCell cell)
+        {
+            bool surrounded = true;
+            for (int d = 0; d < 4; d++)
+            {
+                var dir = (Direction)d;
+                if (CanMoveInDirection(cell, dir, ignoreShots: false)) ;
+                surrounded = false;
+            }
+
+            return surrounded;
         }
 
         /// <summary>
@@ -175,7 +186,7 @@ namespace Battleship
             return false;
         }
 
-        private bool ShipCanFit(ShotCell cell, Ship ship, Direction direction)
+        public bool ShipCanFit(ShotCell cell, Ship ship, Direction direction)
         {
             if (cell.HasShot && cell.IsOnSunkShip)
                 return false;
@@ -210,6 +221,25 @@ namespace Battleship
                 cells.Add(next);
 
                 if (!TryGetNextCellInDirection(next, direction, ignoreShots: true, out next))
+                    break;
+
+                count++;
+            }
+
+            return cells.ToArray();
+        }
+
+        public ShotCell[] GetCellsInDirection(ShotCell cell, Direction direction)
+        {
+            var cells = new List<ShotCell>();
+            int count = 0;
+            var next = cell;
+
+            while (next != null)
+            {
+                cells.Add(next);
+
+                if (!TryGetNextCellInDirection(next, direction, ignoreShots: false, out next))
                     break;
 
                 count++;

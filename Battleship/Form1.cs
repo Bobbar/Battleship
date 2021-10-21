@@ -16,6 +16,7 @@ namespace Battleship
     public partial class Form1 : Form
     {
         private Pen _cellPen = new Pen(Brushes.Black, 1.0f);
+        private SolidBrush _parityBrush = new SolidBrush(Color.FromArgb(150, Color.Brown));
         private SolidBrush _hitBrush = new SolidBrush(Color.Red);
         private SolidBrush _missBrush = new SolidBrush(Color.White);
         private SolidBrush _shipBrush = new SolidBrush(Color.LightGray);
@@ -35,8 +36,12 @@ namespace Battleship
         private ComputerAI _compAI;
         private ComputerAI _compAI2;
 
-        private bool _drawCoords = false;
-        private bool _drawHeatMap = false;
+        //private bool _drawCoords = false;
+        //private bool _drawHeatMap = false;
+
+        private bool _drawCoords = true;
+        private bool _drawHeatMap = true;
+
         private bool _compVsComp = false;
 
         public Form1()
@@ -414,7 +419,7 @@ namespace Battleship
             DrawShotsBoard(e.Graphics, _playerBoard, _computerBoard);
 
             if (_drawHeatMap && _compVsComp)
-                DrawHeatMap(e.Graphics, _compAI2.ShipProbabilityHeatMap());
+                DrawHeatMap(e.Graphics, _compAI2.ShipProbabilityHeatMap(null));
         }
 
         private void shipsBox_Paint(object sender, PaintEventArgs e)
@@ -427,7 +432,15 @@ namespace Battleship
             DrawShotsBoard(e.Graphics, _computerBoard, _playerBoard);
 
             if (_drawHeatMap)
-                DrawHeatMap(e.Graphics, _compAI.ShipProbabilityHeatMap());
+            {
+                if (_compAI.IsOnShip && _compAI.LastHit != null)
+                    DrawHeatMap(e.Graphics, _compAI.ShipProbabilityHeatMap(_compAI.LastHit));
+                else
+                    DrawHeatMap(e.Graphics, _compAI.ShipProbabilityHeatMap(null));
+            }
+
+            //if (_drawHeatMap)
+            //    DrawHeatMap(e.Graphics, _compAI.ShipProbabilityHeatMap(null));
         }
 
         private void shipsBox2_Paint(object sender, PaintEventArgs e)
@@ -627,6 +640,11 @@ namespace Battleship
             {
                 RandomizeBoards();
             }
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            RefreshPlayerBoards();
         }
     }
 }

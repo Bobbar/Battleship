@@ -19,7 +19,10 @@ namespace Battleship
         private int _prevShipsSunk = 0;
         private Direction? _followDir = Direction.Up;
         private BoardAnalyzer _boardAnalyzer;
-      
+
+        public ShotCell LastHit { get { return _lastHit; } }
+        public bool IsOnShip { get { return _isOnShip; } }
+
         public ComputerAI(PlayerBoard board, PlayerBoard humanBoard)
         {
             _board = board;
@@ -35,7 +38,7 @@ namespace Battleship
 
             bool wasHit = false;
 
-            if (HasUnSunkHits() && !_directionFound)
+            if (HasUnSunkHits() && !_directionFound && !_isOnShip)
                 LookForUnSunkHits();
 
             // Not on ship, take shots in areas with the highest probability of containing a ship.
@@ -86,6 +89,7 @@ namespace Battleship
                     {
                         _lastHit = followShot;
                         _directionFound = true;
+                        _isOnShip = true;
 
                         if (SunkShip())
                         {
@@ -106,6 +110,7 @@ namespace Battleship
                         {
                             _lastHit = followShot;
                             _directionFound = true;
+                            _isOnShip = true;
 
                             if (SunkShip())
                             {
@@ -116,9 +121,19 @@ namespace Battleship
                         else
                         {
                             // Follow shot missed.
-                            // Go back to first hit cell and flip direction.
-                            _lastHit = _firstHit;
-                            _followDir = Helpers.FlipDirection(_followDir);
+                           
+                            // We don't have two shots in a row, so start over...?
+                            if (_lastHit.Index == _firstHit.Index)
+                            {
+                                _isOnShip = false;
+                                _directionFound = false;
+                            }
+                            else
+                            {
+                                // Go back to first hit cell and flip direction.
+                                _lastHit = _firstHit;
+                                _followDir = Helpers.FlipDirection(_followDir);
+                            }
                         }
                     }
                     else // Can't take shot in the current direction.
@@ -144,13 +159,12 @@ namespace Battleship
             return wasHit;
         }
 
-        public ShotCell[] ShipProbabilityHeatMap(bool focusShip = true)
+        public ShotCell[] ShipProbabilityHeatMap(ShotCell focusCell)
         {
-            if (focusShip)
-                return _boardAnalyzer.ComputeProbabilityHeatMap(_isOnShip ? _lastHit : null);
+            if (focusCell != null && _isOnShip)
+                return _boardAnalyzer.ComputeProbabilityHeatMap(focusCell);
             else
                 return _boardAnalyzer.ComputeProbabilityHeatMap(null);
-
         }
 
         private bool HasUnSunkHits()
@@ -171,16 +185,22 @@ namespace Battleship
 
             foreach (var cell in unsunkHits)
             {
-                var bestDir = GetBestDirectionFromHeatMap(cell);
-
-                if (bestDir != null)
+                if (!_boardAnalyzer.IsSurrounded(cell))
                 {
-                    _followDir = bestDir;
                     _lastHit = cell;
-                    _firstHit = cell;
                     _isOnShip = true;
-                    _directionFound = true;
-                    return;
+
+                    var bestDir = GetBestDirectionFromHeatMap(cell);
+
+                    if (bestDir != null)
+                    {
+                        _followDir = bestDir;
+                        _lastHit = cell;
+                        _firstHit = cell;
+                        _isOnShip = true;
+                        _directionFound = true;
+                        return;
+                    }
                 }
             }
         }
@@ -202,12 +222,17 @@ namespace Battleship
 
         private ShotCell GetNextShot()
         {
-            var allCells = ShipProbabilityHeatMap();
+            var allCells = ShipProbabilityHeatMap(null);
             var cells = allCells.AsEnumerable().Where(c => c.HasShot == false).OrderBy(c => c.Rank).ToArray();
 
             // Find the max rank, and include only cells matching the max rank.
             var maxRank = cells.Max(c => c.Rank);
-            cells = cells.Where(c => c.Rank == maxRank).ToArray();
+
+            // Try to filter and only take shots at parity cells.
+            if (cells.Any(c => c.IsParity && c.Rank == maxRank))
+                cells = cells.Where(c => c.IsParity && c.Rank == maxRank).ToArray();
+            else
+                cells = cells.Where(c => c.Rank == maxRank).ToArray();
 
             // Pick a random cell.
             int rndIdx = _rnd.Next(cells.Length);
@@ -217,12 +242,8 @@ namespace Battleship
 
         private Direction? GetBestDirectionFromHeatMap(ShotCell cell)
         {
-            var heatMap = ShipProbabilityHeatMap(focusShip: true); // Get probabilities for ships at the current ship cell.
-            var heatMapAll = ShipProbabilityHeatMap(focusShip: false); // All other probabilities.
-
-            // Filter out sunk ship cells.
-            heatMap = heatMap.AsEnumerable().Where(c => !c.IsOnSunkShip).ToArray();
-            heatMapAll = heatMapAll.AsEnumerable().Where(c => !c.IsOnSunkShip).ToArray();
+            var heatMap = ShipProbabilityHeatMap(cell); // Get probabilities for ships at the current ship cell.
+            var heatMapAll = ShipProbabilityHeatMap(null); // All other probabilities.
 
             // Overlay ranks from all cells so that the decision is influenced by the current board state.
             for (int i = 0; i < heatMap.Length; i++)
@@ -236,16 +257,20 @@ namespace Battleship
             for (int i = 0; i < 4; i++)
             {
                 var dir = (Direction)i;
-                if (_boardAnalyzer.TryGetNextCellInDirection(cell, dir, false, out ShotCell next))
+
+                if (CanFitAnyUnSunkShips(cell, dir))
                 {
-                    foreach (var c in heatMap)
+                    if (_boardAnalyzer.TryGetNextCellInDirection(cell, dir, false, out ShotCell next))
                     {
-                        if (c.Index == next.Index)
+                        foreach (var c in heatMap)
                         {
-                            if (c.Rank > bestRank)
+                            if (c.Index == next.Index)
                             {
-                                bestRank = c.Rank;
-                                bestDirection = dir;
+                                if (c.Rank > bestRank)
+                                {
+                                    bestRank = c.Rank;
+                                    bestDirection = dir;
+                                }
                             }
                         }
                     }
@@ -256,6 +281,65 @@ namespace Battleship
                 return bestDirection;
             else
                 return null;
+        }
+
+        private bool CanFitAnyUnSunkShips(ShotCell cell, Direction dir)
+        {
+            bool anyCanFit = false;
+            foreach (var ship in _humanBoard.UnSunkShips)
+            {
+                int cellCount = 1;
+                var next = cell;
+                for (int i = 0; i < ship.Length; i++)
+                {
+                    next = _boardAnalyzer.GetNextCellInDirection(next, dir);
+
+                    if (next == null)
+                        break;
+
+                    if (!next.HasShot)
+                    {
+                        cellCount++;
+                    }
+                    else if (next.HasShot && next.IsHit && !next.IsOnSunkShip)
+                    {
+                        cellCount++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+
+                }
+
+                next = cell;
+                for (int i = 0; i < ship.Length; i++)
+                {
+                    next = _boardAnalyzer.GetNextCellInDirection(next, Helpers.FlipDirection(dir));
+
+                    if (next == null)
+                        break;
+
+                    if (!next.HasShot)
+                    {
+                        cellCount++;
+                    }
+                    else if (next.HasShot && next.IsHit && !next.IsOnSunkShip)
+                    {
+                        cellCount++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+
+                }
+
+                if (cellCount >= ship.Length)
+                    anyCanFit = true;
+
+            }
+            return anyCanFit;
         }
 
         public void Test()

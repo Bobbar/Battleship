@@ -245,6 +245,43 @@ namespace Battleship
             }
         }
 
+        public void RandomizeBoardEdges()
+        {
+            while (_placingShip)
+            {
+                var edges = new List<int>();
+                for (int i = 0; i < 10; i++)
+                    edges.Add(Helpers.CellFromCoords(_shipCells, 0, i).Index);
+
+                for (int i = 0; i < 10; i++)
+                    edges.Add(Helpers.CellFromCoords(_shipCells, i, 0).Index);
+
+                for (int i = 0; i < 10; i++)
+                    edges.Add(Helpers.CellFromCoords(_shipCells, i, 9).Index);
+
+                for (int i = 0; i < 10; i++)
+                    edges.Add(Helpers.CellFromCoords(_shipCells, 9, i).Index);
+
+
+
+
+                var cell = _shipCells[edges[0]];
+                while (cell.HasShip)
+                {
+                    cell = _shipCells[edges[_rnd.Next(edges.Count)]];
+                    //if (!edges.Contains(cell.Index))
+                    //    continue;
+                }
+
+                var dir = Helpers.GetRandomDirection();
+                _currentShip.Direction = dir;
+
+                PositionShip(cell.Location);
+
+                PlaceShip(cell.Location);
+            }
+        }
+
         public void RandomizeBoard()
         {
             while (_placingShip)

@@ -83,6 +83,23 @@ namespace Battleship
             }
         }
 
+        public static Direction FlipDirection(Direction dir)
+        {
+            switch (dir)
+            {
+                case Direction.Down:
+                    return Direction.Up;
+                case Direction.Up:
+                    return Direction.Down;
+                case Direction.Left:
+                    return Direction.Right;
+                case Direction.Right:
+                    return Direction.Left;
+                default:
+                    return dir;
+            }
+        }
+
         public static Cell GetRandomCell(Cell[] cells)
         {
             int rndIdx = _rnd.Next(0, cells.Length);

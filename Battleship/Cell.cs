@@ -24,6 +24,14 @@ namespace Battleship
         public Point Location { get { return Helpers.CenterOfPolygon(CellBox); } }
         public int Rank { get; set; }
 
+        public bool IsParity
+        {
+            get
+            {
+                return (Column % 2 + Row % 2 == 1);
+            }
+        }
+
         public override string ToString()
         {
             return $"({Column},{Row})";
