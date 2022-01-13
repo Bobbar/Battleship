@@ -42,7 +42,10 @@ namespace Battleship
         private bool _drawCoords = true;
         private bool _drawHeatMap = true;
 
+        private bool _focusShip = true;
+
         private bool _compVsComp = false;
+
 
         public Form1()
         {
@@ -143,6 +146,7 @@ namespace Battleship
             {
                 var center = Helpers.CenterOfPolygon(cell.CellBox);
                 var probColor = Helpers.GetVariableColor(Color.Blue, Color.Red, Color.Yellow, max, cell.Rank, 255, true);
+
                 gfx.FillEllipse(new SolidBrush(probColor), center.X - _pegSize / 2, center.Y - _pegSize / 2, _pegSize, _pegSize);
                 if (_drawCoords)
                 {
@@ -331,7 +335,8 @@ namespace Battleship
             var shotsTaken = new List<int>();
             int best = int.MaxValue;
             int worst = int.MinValue;
-
+            int comp1Wins = 0;
+            int comp2Wins = 0;
             var timer = new System.Diagnostics.Stopwatch();
             timer.Restart();
 
@@ -348,12 +353,30 @@ namespace Battleship
                     _computerBoard.RandomizeBoard();
 
                     _compAI = new ComputerAI(_computerBoard, _playerBoard);
+                    if (_compVsComp)
+                        _compAI2 = new ComputerAI(_playerBoard, _computerBoard);
 
 
                     bool gameOver = false;
-
                     while (gameOver == false)
                     {
+
+
+                        //try
+                        //{
+                        //    _compAI2.TakeShot();
+                        //}
+                        //catch (Exception)
+                        //{
+
+                        //    Debug.WriteLine("[AI] Clicked the same cell twice?");
+                        //    return;
+                        //}
+
+                        //RefreshPlayerBoards();
+                        //Application.DoEvents();
+                        //Task.Delay(50).Wait();
+
                         try
                         {
                             _compAI.TakeShot();
@@ -365,15 +388,19 @@ namespace Battleship
                             return;
                         }
 
+                        
+
+
 
                         if (_playerBoard.IsDefeated())
                         {
                             gameOver = true;
+                            comp1Wins++;
                         }
                         else if (_computerBoard.IsDefeated())
                         {
                             gameOver = true;
-
+                            comp2Wins++;
                         }
 
                         //RefreshPlayerBoards();
@@ -406,8 +433,7 @@ namespace Battleship
                     totShots += shots;
 
                 float avgShots = totShots / shotsTaken.Count;
-                Debug.WriteLine($"Games: {its} TotShots: {totShots}  AvgShots: {avgShots}  Best: {best}  Worst: {worst}");
-
+                Debug.WriteLine($"Games: {its}  Comp1Wins: {comp1Wins} Comp2Wins: {comp2Wins} TotShots: {totShots}  AvgShots: {avgShots}  Best: {best}  Worst: {worst}");
 
             }
 
@@ -433,8 +459,10 @@ namespace Battleship
 
             if (_drawHeatMap)
             {
-                if (_compAI.IsOnShip && _compAI.LastHit != null)
+                if (_compAI.IsOnShip && _compAI.LastHit != null && _focusShip)
+                {
                     DrawHeatMap(e.Graphics, _compAI.ShipProbabilityHeatMap(_compAI.LastHit));
+                }
                 else
                     DrawHeatMap(e.Graphics, _compAI.ShipProbabilityHeatMap(null));
             }
@@ -603,7 +631,7 @@ namespace Battleship
 
         private void button1_Click(object sender, EventArgs e)
         {
-            StressTest(500);
+            StressTest(4000);
         }
 
         private void drawCoordsCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -645,6 +673,17 @@ namespace Battleship
         private void button3_Click(object sender, EventArgs e)
         {
             RefreshPlayerBoards();
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            _focusShip = checkBox1.Checked;
+            RefreshPlayerBoards();
+        }
+
+        private void CompVsCompCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            _compVsComp = CompVsCompCheckBox.Checked;
         }
     }
 }

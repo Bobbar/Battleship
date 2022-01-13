@@ -234,10 +234,12 @@ namespace Battleship
             else
                 cells = cells.Where(c => c.Rank == maxRank).ToArray();
 
-            // Pick a random cell.
-            int rndIdx = _rnd.Next(cells.Length);
+            return cells.Last();
 
-            return cells[rndIdx];
+            // Pick a random cell.
+            //int rndIdx = _rnd.Next(cells.Length);
+
+            //return cells[rndIdx];
         }
 
         private Direction? GetBestDirectionFromHeatMap(ShotCell cell)
@@ -252,6 +254,7 @@ namespace Battleship
             }
 
             int bestRank = int.MinValue;
+
             Direction bestDirection = Direction.Down;
 
             for (int i = 0; i < 4; i++)

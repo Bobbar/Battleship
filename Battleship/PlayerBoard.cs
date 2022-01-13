@@ -19,6 +19,7 @@ namespace Battleship
         private Size _boardSize;
         private int _playerNumber = -1;
         private Random _rnd = new Random();
+        private int _shotsTaken = 0;
 
         private Ship _currentShip
         {
@@ -39,8 +40,7 @@ namespace Battleship
         {
             get
             {
-                var shots = ShotCells.Where(c => c.HasShot).ToArray();
-                return shots.Length;
+                return _shotsTaken;
             }
         }
 
@@ -330,6 +330,8 @@ namespace Battleship
                 throw new Exception("This cell already contains a shot dummy!");
 
             var shipCell = Helpers.CellFromCoords(otherBoard.ShipCells, shotCell.Row, shotCell.Column) as ShipCell;
+            
+            _shotsTaken++;
 
             if (shipCell.HasShip)
             {

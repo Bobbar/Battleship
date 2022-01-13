@@ -196,7 +196,6 @@ namespace Battleship
             return false;
         }
 
-
         public static Color GetVariableColor(Color startColor, Color midColor, Color endColor, float maxValue, float currentValue, int alpha, bool translucent = false)
         {
             float intensity = 0;
@@ -251,7 +250,5 @@ namespace Battleship
                 return Color.FromArgb(newR, newG, newB);
             }
         }
-
-
     }
 }

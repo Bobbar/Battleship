@@ -50,6 +50,7 @@ namespace Battleship
             this.DrawHeatMapCheckBox = new System.Windows.Forms.CheckBox();
             this.CompVsCompCheckBox = new System.Windows.Forms.CheckBox();
             this.button3 = new System.Windows.Forms.Button();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.shotsBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.shipsBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.shotsBox2)).BeginInit();
@@ -266,6 +267,7 @@ namespace Battleship
             this.CompVsCompCheckBox.TabIndex = 19;
             this.CompVsCompCheckBox.Text = "Comp vs Comp";
             this.CompVsCompCheckBox.UseVisualStyleBackColor = true;
+            this.CompVsCompCheckBox.CheckedChanged += new System.EventHandler(this.CompVsCompCheckBox_CheckedChanged);
             // 
             // button3
             // 
@@ -277,11 +279,25 @@ namespace Battleship
             this.button3.UseVisualStyleBackColor = true;
             this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
+            // checkBox1
+            // 
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.Checked = true;
+            this.checkBox1.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBox1.Location = new System.Drawing.Point(549, 344);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(80, 17);
+            this.checkBox1.TabIndex = 21;
+            this.checkBox1.Text = "checkBox1";
+            this.checkBox1.UseVisualStyleBackColor = true;
+            this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1143, 917);
+            this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.CompVsCompCheckBox);
             this.Controls.Add(this.DrawHeatMapCheckBox);
@@ -341,6 +357,7 @@ namespace Battleship
         private System.Windows.Forms.CheckBox DrawHeatMapCheckBox;
         private System.Windows.Forms.CheckBox CompVsCompCheckBox;
         private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.CheckBox checkBox1;
     }
 }
 

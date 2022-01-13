@@ -11,7 +11,8 @@ namespace Battleship
     {
         private PlayerBoard _ourBoard;
         private PlayerBoard _opponentBoard;
-
+        private int _prevShotsTaken = 0;
+        private ShotCell[] _prevHeatMap;
         public BoardAnalyzer(PlayerBoard ourBoard, PlayerBoard opponentBoard)
         {
             _ourBoard = ourBoard;
@@ -23,53 +24,63 @@ namespace Battleship
         /// </summary>
         /// <param name="focusCell">Optional. If specified, the probabilities will only be computed for ships potentially located within the specified cell.</param>
         /// <returns></returns>
-        /// 
-        public ShotCell[] ComputeProbabilityHeatMap(Cell focusCell = null)
+        public ShotCell[] ComputeProbabilityHeatMap(ShotCell focusCell = null)
         {
-            var cells = new Dictionary<int, ShotCell>();
+            // Return cached heat map if applicable.
+            if (_prevShotsTaken > 0 && _prevShotsTaken == _ourBoard.ShotsTaken)
+                return _prevHeatMap;
 
+            // Reset ranks.
             foreach (var shotCell in _ourBoard.ShotCells)
-            {
-                if (!cells.ContainsKey(shotCell.Index))
-                {
-                    shotCell.Rank = 0;
-                    cells.Add(shotCell.Index, shotCell);
-                }
-            }
+                shotCell.Rank = 0;
 
-            foreach (var shotCell in _ourBoard.ShotCells)
+            if (focusCell != null)
             {
                 foreach (var ship in _opponentBoard.UnSunkShips)
                 {
                     for (int d = 0; d < 4; d++)
-                    //for (int d = 1; d <= 2; d++) // Does it really make a difference to only compute for vertical & horizontal directions?
                     {
                         var dir = (Direction)d;
 
-                        if (ShipCanFit(shotCell, ship, dir))
+                        if (TryGetShipCells(focusCell, ship, dir, out ShotCell[] shipCells))
                         {
-                            var shipCells = GetCellsInDirectionConstrained(shotCell, dir, ship.Length);
+                            if (shipCells.Length != ship.Length)
+                                continue;
 
-                            if (focusCell != null && shipCells.CellsContainIndex(focusCell.Index))
+                            foreach (var shipCell in shipCells)
+                                shipCell.Rank++;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                foreach (var shotCell in _ourBoard.ShotCells)
+                {
+                    foreach (var ship in _opponentBoard.UnSunkShips)
+                    {
+                        for (int d = 0; d < 4; d++)
+                        {
+                            var dir = (Direction)d;
+
+                            if (TryGetShipCells(shotCell, ship, dir, out ShotCell[] shipCells))
                             {
+                                if (shipCells.Length != ship.Length)
+                                    continue;
+
                                 foreach (var shipCell in shipCells)
-                                {
-                                    cells[shipCell.Index].Rank++;
-                                }
-                            }
-                            else if (focusCell == null)
-                            {
-                                foreach (var shipCell in shipCells)
-                                {
-                                    cells[shipCell.Index].Rank++;
-                                }
+                                    shipCell.Rank++;
                             }
                         }
                     }
                 }
             }
 
-            return cells.Values.ToArray();
+            var heatMap = _ourBoard.ShotCells;
+            _prevHeatMap = heatMap;
+            _prevShotsTaken = _ourBoard.ShotsTaken;
+
+            return heatMap;
         }
 
         public bool TryGetNextCellInDirection(ShotCell currentCell, Direction? direction, bool ignoreShots, out ShotCell nextCell)
@@ -116,8 +127,8 @@ namespace Battleship
             for (int d = 0; d < 4; d++)
             {
                 var dir = (Direction)d;
-                if (CanMoveInDirection(cell, dir, ignoreShots: false)) ;
-                surrounded = false;
+                if (CanMoveInDirection(cell, dir, ignoreShots: false))
+                    surrounded = false;
             }
 
             return surrounded;
@@ -207,6 +218,27 @@ namespace Battleship
                     return false;
             }
 
+            return true;
+        }
+
+        public bool TryGetShipCells(ShotCell cell, Ship ship, Direction direction, out ShotCell[] shipCells)
+        {
+            shipCells = null;
+
+            if (cell.HasShot && cell.IsOnSunkShip)
+                return false;
+
+            if (cell.HasShot && !cell.IsHit)
+                return false;
+
+            var cells = GetCellsInDirectionConstrained(cell, direction, ship.Length);
+
+            if (cells.Any(c => c.HasShot && c.IsOnSunkShip || c.HasShot && !c.IsHit))
+                return false;
+
+            //if (cells.Any(c => c.HasShot && !c.IsHit))
+            //    return false;
+            shipCells = cells;
             return true;
         }
 
